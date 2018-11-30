@@ -107,7 +107,7 @@ void color_detect::Rotated_detect(vector<RotatedRect> &Led_rRect)
     for (int i=0;i<(int)contours.size();i++)
     {
         // 条件1：点的集合
-        if ((int)contours[i].size() > 10)
+        if ((int)contours[i].size() > 5)
         {
             RotatedRect rRect =  minAreaRect(contours[i]);
             // 条件2：筛选掉横的
@@ -115,7 +115,7 @@ void color_detect::Rotated_detect(vector<RotatedRect> &Led_rRect)
                    ((rRect.size.width+5 <= rRect.size.height) && (rRect.angle > -30)))
            {
                // 筛选掉小的
-               if (rRect.size.area() > 100)
+               if (rRect.size.area() > 50)
                {
                    // 把检测到的蓝色用框画起来
                    Point2f points[4];
@@ -172,11 +172,11 @@ void color_detect::ammor_detect(vector<RotatedRect> &led_rRect)
                 double dscore = 0.7*distance + 0.3*C;
 
                 // 利用坐标信息，长度信息
-                if(((dcenter_x > 20) &&
-                    (dcenter_x < 500)) &&
+                if(((dcenter_x > 10) &&
+                    (dcenter_x < 1000)) &&
                         (dcenter_y < 20))
                 {
-                    if (C <= 13)
+                    if (C <= 20)
                     {
                         // 记录这个分数
                         localtion.score = dscore;
@@ -257,14 +257,14 @@ void color_detect::ammor_detect(vector<RotatedRect> &led_rRect)
         final_ammor.angle = 0;
         final_ammor.size.width = dx;
         final_ammor.size.height = height;
-        cout << "装甲板的长:" << height << "装甲板的宽:" << dx << endl;
+        //cout << "装甲板的长:" << height << "装甲板的宽:" << dx << endl;
         flag = true;
     }
 }
 
 void color_detect::detect(Mat &image,char color_mode)
 {
-    cout << "坐标为:" << pre_value[0] << "," << pre_value[1] << endl;
+    //cout << "坐标为:" << pre_value[0] << "," << pre_value[1] << endl;
     mode_color = color_mode;
     src = image.clone();
     if(flag)

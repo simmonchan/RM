@@ -151,3 +151,43 @@ void camera_calibration(int image_num,Size chessboard_one)
 //    }
 //    cout<<"保存结束"<<endl;
 }
+
+void camera_two_calibration()
+{
+    /**************************************标定参数********************************************/
+    Mat cameraMatrixL = (Mat_<double>(3, 3) << 1741.4, 0, 708.9,
+                         0, 1744.3, 309.3,
+                         0, 0, 1);
+    Mat distCoeffL = (Mat_<double>(5, 1) << -0.500, 0.1012, 0.0063, -0.0199,0.0);
+
+    Mat cameraMatrixR = (Mat_<double>(3, 3) << 1825, 0, 665.1,
+        0, 1828.4, 311,
+        0, 0, 1);
+    Mat distCoeffR = (Mat_<double>(5, 1) << -0.6872,0.4549, 0.0115, -0.0116 , 0.0);
+
+    Mat T = (Mat_<double>(3, 1) << -199.4111, -3.1041, -3.1311);//T平移向量
+    Mat R = (Mat_<double>(3, 3) << 0.9993, -0.0140, -0.0341,
+             0.0147, 0.9996, 0.0222,
+             0.0338, -0.0227, 0.9992);//R旋转向量
+
+
+    /****************************************标定函数需要的参数*************************************/
+    int imageWidth = 1280;                             //摄像头的分辨率
+    int imageHeight = 720;
+    Size imageSize = Size(imageWidth, imageHeight);
+
+    Rect validROIL,validROIR;          //图像校正之后，会对图像进行裁剪，这里的validROI就是指裁剪之后的区域
+    Mat Rl, Rr, Pl, Pr, Q;              //校正旋转矩阵R，投影矩阵P 重投影矩阵Q
+    cout << "开始校准" << endl;
+
+    /*立体校正*/
+    stereoRectify(cameraMatrixL, distCoeffL, cameraMatrixR, distCoeffR, imageSize, R, T, Rl, Rr, Pl, Pr, Q, CALIB_ZERO_DISPARITY,
+           0, imageSize, &validROIL, &validROIR);
+
+    FileStorage fs("camera_calibrate.yaml",FileStorage::WRITE);
+    fs << "cameraMatrixL" << cameraMatrixL << "distCoeffL" << distCoeffL << "Rl" << Rl << "Pl" << Pl;
+    fs << "cameraMatrixR" << cameraMatrixR << "distCoeffR" << distCoeffR << "Rr" << Rr << "Pr" << Pr;
+    fs << "Q" << Q;
+
+    fs.release();
+}

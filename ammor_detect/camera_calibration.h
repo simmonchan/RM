@@ -14,4 +14,6 @@ using namespace cv;
 /* 图片的数目传进*/
 void camera_calibration(int image_num,Size chessboard_one);
 
+void camera_two_calibration();
+
 #endif // CAMERA_CALIBRATION_H

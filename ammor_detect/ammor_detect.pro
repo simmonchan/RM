@@ -34,7 +34,9 @@ SOURCES += main.cpp \
     solvepnp.cpp \
     camera_calibration.cpp \
     sudoku.cpp \
-    color_detect.cpp
+    color_detect.cpp \
+    two_camera.cpp \
+    ammor_find.cpp
 
 HEADERS += \
     CRC_Check.h \
@@ -43,4 +45,7 @@ HEADERS += \
     solvepnp.h \
     camera_calibration.h \
     sudoku.h \
-    color_detect.h
+    color_detect.h \
+    two_camera.h \
+    ammor_find.h \
+    Header.h
