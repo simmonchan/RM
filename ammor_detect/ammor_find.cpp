@@ -151,10 +151,10 @@ void Ammor_find::GetArmors()
                         }
                         Point armor_center = Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y));
                         pushdata.armor_center = armor_center;
-    //                    pushdata.sort_points[0] = pt_L1[0];
-    //                    pushdata.sort_points[1] = pt_L1[1];
-    //                    pushdata.sort_points[2] = pt_L2[2];
-    //                    pushdata.sort_points[3] = pt_L2[3];
+                        pushdata.armor_points[0] = pt_L1[0];
+                        pushdata.armor_points[1] = pt_L1[1];
+                        pushdata.armor_points[2] = pt_L2[2];
+                        pushdata.armor_points[3] = pt_L2[3];
                         _Armordatas.push_back(pushdata);
                         _ArmorPoints.push_back(armor_center);
     #ifdef SHOW_DEBUG
@@ -210,14 +210,6 @@ void Ammor_find::sort_Rotated_Point(Point2f _pt[4],Point2f  pt[4])
     }
 }
 
-/**
-  * @brief to cut the roi
-  * @param  none
-  * @return none
-  */
-void Ammor_find::img_cut()
-{
-}
 /**
   * @brief detect the armor
   * @param  image:the src

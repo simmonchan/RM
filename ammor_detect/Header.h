@@ -16,8 +16,26 @@
 #define GET_RED 0x01
 #define GET_NO 0x00
 
+#define LEFT true
+#define RIGHT false
+
 using namespace cv;
 using namespace std;
+
+
+
+struct InitParams{
+    uchar armor_thres_whole;
+    uchar armor_thres_red;
+    uchar armor_thres_blue;
+
+    InitParams(){
+        armor_thres_whole = 30;
+        armor_thres_red = 40;
+        armor_thres_blue = 80;
+    }
+
+};
 
 typedef struct{
     typedef enum{
@@ -26,9 +44,8 @@ typedef struct{
     }armor_type;
     Point armor_center;
     float distance;//mm
+    Point armor_points[4];
     armor_type armor;
-    Point sort_points[4];
-    int Last_xids;
 }Armordata;
 
 #endif // HEADER_H

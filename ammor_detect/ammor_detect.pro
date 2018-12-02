@@ -28,24 +28,30 @@ LIBS += /usr/local/lib/libopencv_highgui.so.3.3 \
         /usr/local/lib/libopencv_dnn.so.3.3
 
 SOURCES += main.cpp \
-    CRC_Check.cpp \
-    serialport.cpp \
-    RM_v4l2.cpp \
-    solvepnp.cpp \
+    ammor_find.cpp \
     camera_calibration.cpp \
-    sudoku.cpp \
     color_detect.cpp \
-    two_camera.cpp \
-    ammor_find.cpp
+    CRC_Check.cpp \
+    RM_v4l2.cpp \
+    serialport.cpp \
+    solvepnp.cpp \
+    stereo_vision.cpp
+
+
+
 
 HEADERS += \
-    CRC_Check.h \
-    serialport.h \
-    RM_v4l2.h \
-    solvepnp.h \
-    camera_calibration.h \
-    sudoku.h \
-    color_detect.h \
-    two_camera.h \
     ammor_find.h \
-    Header.h
+    camera_calibration.h \
+    color_detect.h \
+    CRC_Check.h \
+    Header.h \
+    RM_v4l2.h \
+    serialport.h \
+    solvepnp.h \
+    stereo_vision.h
+
+SUBDIRS += \
+    ammor_detect.pro
+
+

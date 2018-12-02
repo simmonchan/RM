@@ -12,20 +12,6 @@ static inline bool RotateRectSort(RotatedRect a1,RotatedRect a2){
     return a1.center.x < a2.center.x;
 }
 
-
-struct InitParams{
-    uchar armor_thres_whole;
-    uchar armor_thres_red;
-    uchar armor_thres_blue;
-
-    InitParams(){
-        armor_thres_whole = 30;
-        armor_thres_red = 40;
-        armor_thres_blue = 80;
-    }
-
-};
-
 class Ammor_find
 {
 public:
@@ -35,7 +21,6 @@ public:
     void GetArmors();
     double GetK(Point2f L1,Point2f L2);
     void sort_Rotated_Point(Point2f _pt[4],Point2f pt[4]);
-    void img_cut();
     void detect(Mat &image,bool mode);
     void clear();
 
