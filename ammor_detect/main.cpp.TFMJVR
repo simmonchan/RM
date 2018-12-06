@@ -7,40 +7,31 @@
 #include "stereo_vision.h"
 #include "RMVideoCapture.h"
 #include "Header.h"
-#include "Imagethread.h"
+
+#include <utility>
 #include <thread>
+#include <chrono>
+#include <functional>
+#include <atomic>
+#include <signal.h>
 
 using namespace cv;
 using namespace std;
 
 //#define MONOCALUR
-// #define DEBUG
-//#define PORT_SEND
 
-void ConImageThread(RMVideoCapture &cap, Mat &src, Ammor_find &find)
+int stereo_detect()
 {
-    cap >> src;
-    if(!src.empty())
-    {
-        find.detect(src,BLUE_DETECT);
-    }
-}
-
-
-int main()
-{
-#ifdef PORT_SEND
-    //set the port
-    SerialPort port;
-    port.initSerialPort();
+     //set the port
+    //SerialPort port;
+    //port.initSerialPort();
     VisionData vision = {0,0,0,0,0};
-#endif
 
     // open the camera and local the camera
-    RMVideoCapture cap0("/dev/video0",3);
+    RMVideoCapture cap0("/dev/video1",3);
     if(cap0.fd!=-1){
         cap0.setVideoFormat(1280,720,1);
-        cap0.setExposureTime(0, 10);
+        cap0.setExposureTime(0, 100);
         cap0.startStream();
         cap0.info();
     }
@@ -48,10 +39,10 @@ int main()
         cap0.camnum = -1;
     }
 
-    RMVideoCapture cap1("/dev/video1",3);
+    RMVideoCapture cap1("/dev/video2",3);
     if(cap1.fd!=-1){
         cap1.setVideoFormat(1280,720,1);
-        cap1.setExposureTime(0,10);
+        cap1.setExposureTime(0,100);
         cap1.startStream();
         cap1.info();
     }
@@ -88,31 +79,34 @@ int main()
         camstatus[1] = false;
     }
 
-    // define the using things
+
     Ammor_find Armor_find_left;
     Ammor_find Armor_find_right;
 
-    Mat frame_left;
-    Mat frame_right;
-
     stereo_vision stereo;
 
-    cout << "自瞄开始" << endl;
     while(camstatus[0] && camstatus[1])
     {
         QTime time;
         time.start();
 
-        thread left_image_pro(ConImageThread,ref(cap_left),ref(frame_left),ref(Armor_find_left));
-        thread right_image_pro(ConImageThread,ref(cap_right),ref(frame_right),ref(Armor_find_right));
+        Mat frame_left;
+        Mat frame_right;
 
-        left_image_pro.join();
-        right_image_pro.join();
-#ifdef DEBUG
+        cap_left >> frame_left;
+        cap_right >> frame_right;
+
+        if(frame_left.empty() && frame_right.empty())
+        {
+            cout << "no picture" << endl;
+            continue;
+        }
+
         imshow("left",frame_left);
         imshow("right",frame_right);
-        waitKey(1);
-#endif
+
+        Armor_find_left.detect(frame_left,BLUE_DETECT);
+        Armor_find_right.detect(frame_right,BLUE_DETECT);
 
         vector<Point> Left_points;
         vector<Point> Right_points;
@@ -142,15 +136,12 @@ int main()
                 //memory the last data
                 Armor_find_left._LastArmor = Left_armor_data[0];
                 Armor_find_right._LastArmor = Right_armor_data[0];
-#ifdef PORT_SEND
+
                 // send the data
                 Point final = (Left_armor_data[0].armor_center);
                 vision = {(float)final.x,(float)final.y,Left_armor_data[0].distance,0,1};
-                port.TransformData(vision);
-                port.send();
-#endif
-                Armor_find_left.clear();
-                Armor_find_right.clear();
+                //port.TransformData(vision);
+                //port.send();
             }
 
             else if(Left_points.size() > Right_points.size())
@@ -165,13 +156,14 @@ int main()
 
                 // memory the last data
                 Armor_find_left._LastArmor = Left_armor_data[0];
-#ifdef PORT_SEND
+
                 // send the data
                 Point final = (Left_armor_data[0].armor_center);
                 vision = {(float)final.x,(float)final.y,Left_armor_data[0].distance,0,1};
-                port.TransformData(vision);
-                port.send();
-#endif
+                //port.TransformData(vision);
+                //port.send();
+
+
                 Armor_find_left.clear();
                 Armor_find_right.clear();
             }
@@ -189,13 +181,12 @@ int main()
                 // memory the last data
                 Armor_find_right._LastArmor = Right_armor_data[0];
 
-#ifdef PORT_SEND
                 // send the data
                 Point final = (Right_armor_data[0].armor_center);
                 vision = {(float)final.x,(float)final.y,Right_armor_data[0].distance,0,1};
-                port.TransformData(vision);
-                port.send();
-#endif
+                //port.TransformData(vision);
+                //port.send();
+
 
                 Armor_find_left.clear();
                 Armor_find_right.clear();
@@ -217,13 +208,13 @@ int main()
 
             // memory the last data
             Armor_find_left._LastArmor = Left_armor_data[0];
-#ifdef PORT_SEND
+
             // send the data
             Point final = (Left_armor_data[0].armor_center);
             vision = {(float)final.x,(float)final.y,Left_armor_data[0].distance,0,1};
-            port.TransformData(vision);
-            port.send();
-#endif
+            //port.TransformData(vision);
+            //port.send();
+
 
             Armor_find_left.clear();
             Armor_find_right.clear();
@@ -240,40 +231,28 @@ int main()
 
             // memory the last data
             Armor_find_right._LastArmor = Right_armor_data[0];
-#ifdef PORT_SEND
+
             // send the data
             Point final = (Right_armor_data[0].armor_center);
             vision = {(float)final.x,(float)final.y,Right_armor_data[0].distance,0,1};
-            port.TransformData(vision);
-            port.send();
-#endif
+            //port.TransformData(vision);
+            //port.send();
+
 
             Armor_find_left.clear();
             Armor_find_right.clear();
         }
         else
         {
-#ifdef PORT_SEND
             vision = {0,0,0,0,0};
-            port.TransformData(vision);
-            port.send();
-#endif
+            //port.TransformData(vision);
+            //port.send();
             Armor_find_left.clear();
             Armor_find_right.clear();
         }
+        waitKey(1);
         qDebug()<<"time:"<<time.elapsed()<<"ms";
-#ifdef DEBUG
-        char k = waitKey(1);
-        if(k == 'q')
-        {
-            cap_left.closeStream();
-            cap_right.closeStream();
-            exit(1);
-        }
-#endif
     }
-    cap0.closeStream();
-    cap1.closeStream();
     return 0;
 }
 
@@ -346,3 +325,93 @@ int detects()
     return 0;
 }
 #endif
+
+void GetImageThread(RMVideoCapture &cap,Mat &out){
+    cap>>out;
+}
+
+int main()
+{
+    // open the camera and local the camera
+    RMVideoCapture cap0("/dev/video1",3);
+    if(cap0.fd!=-1){
+        cap0.setVideoFormat(1280,720,1);
+        cap0.setExposureTime(0, 10);
+        cap0.startStream();
+        cap0.info();
+    }
+    else{
+        cap0.camnum = -1;
+    }
+
+    RMVideoCapture cap1("/dev/video2",3);
+    if(cap1.fd!=-1){
+        cap1.setVideoFormat(1280,720,1);
+        cap1.setExposureTime(0,10);
+        cap1.startStream();
+        cap1.info();
+    }
+    else{
+        cap1.camnum = -1;
+    }
+    RMVideoCapture cap_left,cap_right;
+    bool camstatus[2] = {false,false};
+    if(cap0.camnum == 1)
+    {
+        cap_left = cap0;
+        camstatus[0] = true;
+    }
+    else if(cap1.camnum == 1)
+    {
+        cap_left = cap1;
+        camstatus[0] = true;
+    }
+    else{
+        camstatus[0] = false;
+    }
+
+    if(cap0.camnum == 2)
+    {
+        cap_right = cap0;
+        camstatus[1] = true;
+    }
+    else if(cap1.camnum == 2)
+    {
+        cap_right = cap1;
+        camstatus[1] = true;
+    }
+    else{
+        camstatus[1] = false;
+    }
+
+    Ammor_find Armor_find_left;
+    Ammor_find Armor_find_right;
+
+
+    while(camstatus[0] && camstatus[1])
+    {
+        QTime time;
+        time.start();
+
+        Mat frame_left;
+        Mat frame_right;
+
+        thread th1(GetImageThread,ref(cap_left),ref(frame_left));
+        thread th2(GetImageThread,ref(cap_right),ref(frame_right));
+
+        th1.join();
+        th2.join();
+
+        thread p1(&Ammor_find::detect,&Armor_find_left,ref(frame_left),BLUE_DETECT);
+        thread p2(&Ammor_find::detect,&Armor_find_right,ref(frame_right),BLUE_DETECT);
+
+        p1.join();
+        p2.join();
+
+        Armor_find_left.clear();
+        Armor_find_right.clear();
+
+        qDebug()<<"time:"<<time.elapsed()<<"ms";
+    }
+
+}

@@ -29,27 +29,27 @@ LIBS += /usr/local/lib/libopencv_highgui.so.3.3 \
 
 SOURCES += main.cpp \
     ammor_find.cpp \
-    camera_calibration.cpp \
-    color_detect.cpp \
     CRC_Check.cpp \
-    RM_v4l2.cpp \
     serialport.cpp \
     solvepnp.cpp \
-    stereo_vision.cpp
+    stereo_vision.cpp \
+    RMVideoCapture.cpp \
+    Imagethread.cpp \
+    Structure.cpp
 
 
 
 
 HEADERS += \
     ammor_find.h \
-    camera_calibration.h \
-    color_detect.h \
     CRC_Check.h \
     Header.h \
-    RM_v4l2.h \
     serialport.h \
     solvepnp.h \
-    stereo_vision.h
+    stereo_vision.h \
+    RMVideoCapture.h \
+    Imagethread.h \
+    Structure.h
 
 SUBDIRS += \
     ammor_detect.pro

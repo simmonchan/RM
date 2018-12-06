@@ -19,6 +19,7 @@ stereo_vision::stereo_vision()
     scale_z = 1;
     min_distance = 50;
     max_distance = 700;
+    fs2.release();
 }
 
 void stereo_vision::solvePnP4Points(const Mat & cameraMatrix, const Mat & distCoeff,const std::vector<cv::Point2f> & points2d, cv::Mat & rot, cv::Mat & trans)
@@ -81,7 +82,7 @@ void stereo_vision::monocular_get_distance(vector<Armordata> &data,bool mode,con
     }
 }
 
-void stereo_vision::stereo_get_distance( vector<Point> &Left, vector<Point> &Right,vector<Armordata> &data)
+void stereo_vision::stereo_get_distance( vector<Point> &Left, vector<Point> &Right,vector<Armordata> &L_data, vector<Armordata> R_data )
 {
 #ifdef DEBUG
      cout << "矫正前的:" << left_center << endl;
@@ -96,9 +97,10 @@ void stereo_vision::stereo_get_distance( vector<Point> &Left, vector<Point> &Rig
         Mat xyzw = (Mat_<double>(4,1) << 0,0,0,0);
         xyzw = Q*image_xyd;
         double z = xyzw.at<double>(2,0)/xyzw.at<double>(3,0);
-        double x = xyzw.at<double>(0,0)*z/Q.at<double>(2,3);
-        double y = xyzw.at<double>(1,0)*z/Q.at<double>(2,3);
-        data[i].distance = z;
+        //double x = xyzw.at<double>(0,0)*z/Q.at<double>(2,3);
+        //double y = xyzw.at<double>(1,0)*z/Q.at<double>(2,3);
+        L_data[i].distance = z;
+        R_data[i].distance = z;
     }
 #ifdef DEBUG
      cout << "矫正后的:" << left_center << endl;

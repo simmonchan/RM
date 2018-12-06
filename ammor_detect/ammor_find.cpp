@@ -1,7 +1,9 @@
 #include "ammor_find.h"
 
 Ammor_find::Ammor_find(){
-
+    _flag = false;
+    _mode = GET_NO;
+    _ArmorLostDelay = 0;
 }
 
 /**
@@ -167,6 +169,12 @@ void Ammor_find::GetArmors()
             }
         }
     }
+    if(_ArmorPoints.size() != 0){
+        _flag = true;
+    }
+    else{
+        _flag = false;
+    }
 }
 
 /**
@@ -211,6 +219,36 @@ void Ammor_find::sort_Rotated_Point(Point2f _pt[4],Point2f  pt[4])
 }
 
 /**
+  * @brief cut the image
+  * @param  none
+  * @return none
+  */
+void Ammor_find::img_cut()
+{
+    if(_flag){
+        Point lu = _LastArmor.armor_points[0];
+        Point rd = _LastArmor.armor_points[3];
+
+        int width = rd.x - lu.x;
+        int height = rd.y - lu.y;
+
+        if(width > 0 && height > 0){
+            Rect Last_rect(lu,Size(width,height));
+
+            // resize the rect
+            Size size(width*1.25,height*1.3);
+            Last_rect += size;
+            Point pt;
+            pt.x = cvRound(size.width/2);
+            pt.y = cvRound(size.height/2);
+            Last_rect -= pt;
+
+            _src = _src(Last_rect);
+        }
+    }
+}
+
+/**
   * @brief detect the armor
   * @param  image:the src
   * @param  mode:color mode
@@ -220,6 +258,7 @@ void Ammor_find::detect(Mat &image,bool mode)
 {
     _mode = mode;
     _src = image.clone();
+    //img_cut();
     Color_process(_src);
     Find_lightbar();
     GetArmors();

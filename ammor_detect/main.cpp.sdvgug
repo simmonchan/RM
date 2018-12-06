@@ -14,18 +14,12 @@ using namespace cv;
 using namespace std;
 
 //#define MONOCALUR
-// #define DEBUG
+//#define DEBUG
 //#define PORT_SEND
 
-void ConImageThread(RMVideoCapture &cap, Mat &src, Ammor_find &find)
-{
-    cap >> src;
-    if(!src.empty())
-    {
-        find.detect(src,BLUE_DETECT);
-    }
+void GetImageThread(RMVideoCapture &cap,Mat &out){
+    cap>>out;
 }
-
 
 int main()
 {
@@ -37,10 +31,10 @@ int main()
 #endif
 
     // open the camera and local the camera
-    RMVideoCapture cap0("/dev/video0",3);
+    RMVideoCapture cap0("/dev/video1",3);
     if(cap0.fd!=-1){
         cap0.setVideoFormat(1280,720,1);
-        cap0.setExposureTime(0, 10);
+        cap0.setExposureTime(0, 100);
         cap0.startStream();
         cap0.info();
     }
@@ -48,10 +42,10 @@ int main()
         cap0.camnum = -1;
     }
 
-    RMVideoCapture cap1("/dev/video1",3);
+    RMVideoCapture cap1("/dev/video2",3);
     if(cap1.fd!=-1){
         cap1.setVideoFormat(1280,720,1);
-        cap1.setExposureTime(0,10);
+        cap1.setExposureTime(0,100);
         cap1.startStream();
         cap1.info();
     }
@@ -88,31 +82,43 @@ int main()
         camstatus[1] = false;
     }
 
-    // define the using things
+
     Ammor_find Armor_find_left;
     Ammor_find Armor_find_right;
-
-    Mat frame_left;
-    Mat frame_right;
 
     stereo_vision stereo;
 
     cout << "自瞄开始" << endl;
+
     while(camstatus[0] && camstatus[1])
     {
         QTime time;
         time.start();
 
-        thread left_image_pro(ConImageThread,ref(cap_left),ref(frame_left),ref(Armor_find_left));
-        thread right_image_pro(ConImageThread,ref(cap_right),ref(frame_right),ref(Armor_find_right));
+        Mat frame_left;
+        Mat frame_right;
+
+        thread left_image_pro(GetImageThread,ref(cap_left),ref(frame_left));
+        thread right_image_pro(GetImageThread,ref(cap_right),ref(frame_right));
 
         left_image_pro.join();
         right_image_pro.join();
+
+        if(frame_left.empty() || frame_right.empty())
+        {
+            cout << " no picture" << endl;
+            continue;
+        }
 #ifdef DEBUG
         imshow("left",frame_left);
         imshow("right",frame_right);
         waitKey(1);
 #endif
+        thread left_Con(&Ammor_find::detect,Armor_find_left,ref(frame_left),BLUE_DETECT);
+        thread right_Con(&Ammor_find::detect,Armor_find_right,ref(frame_right),BLUE_DETECT);
+
+        left_Con.join();
+        right_Con.join();
 
         vector<Point> Left_points;
         vector<Point> Right_points;
@@ -149,8 +155,6 @@ int main()
                 port.TransformData(vision);
                 port.send();
 #endif
-                Armor_find_left.clear();
-                Armor_find_right.clear();
             }
 
             else if(Left_points.size() > Right_points.size())
@@ -172,6 +176,7 @@ int main()
                 port.TransformData(vision);
                 port.send();
 #endif
+
                 Armor_find_left.clear();
                 Armor_find_right.clear();
             }
@@ -262,18 +267,7 @@ int main()
             Armor_find_right.clear();
         }
         qDebug()<<"time:"<<time.elapsed()<<"ms";
-#ifdef DEBUG
-        char k = waitKey(1);
-        if(k == 'q')
-        {
-            cap_left.closeStream();
-            cap_right.closeStream();
-            exit(1);
-        }
-#endif
     }
-    cap0.closeStream();
-    cap1.closeStream();
     return 0;
 }
 

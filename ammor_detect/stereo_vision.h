@@ -26,7 +26,7 @@ public:
 
     void monocular_get_distance(vector<Armordata> &data,bool mode,const cv::Point offset);
 
-    void stereo_get_distance( vector<Point> &Left, vector<Point> &Right,vector<Armordata> &data);
+    void stereo_get_distance(vector<Point> &Left, vector<Point> &Right,vector<Armordata> &L_data, vector<Armordata> R_data);
 
 public:
     cv::Mat position_in_camera;

@@ -8,6 +8,7 @@
 #include <opencv2/ml/ml.hpp>
 #include <opencv2/dnn/dnn.hpp>
 #include <iostream>
+#include <thread>
 
 #define BLUE_DETECT true
 #define RED_DETECT false
@@ -42,10 +43,10 @@ typedef struct{
         small_armor,
         big_armor
     }armor_type;
-    Point armor_center;
-    float distance;//mm
-    Point armor_points[4];
-    armor_type armor;
+    Point armor_center = Point(0,0);
+    float distance = 0.0;//mm
+    Point armor_points[4] = {Point(0,0),Point(0,0),Point(0,0),Point(0,0)};
+    armor_type armor = small_armor;
 }Armordata;
 
 #endif // HEADER_H
