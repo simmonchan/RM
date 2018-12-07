@@ -99,7 +99,7 @@ void SerialPort::set_Brate()
     int name_arr[] = {115200, 38400, 19200, 9600, 4800, 2400, 1200,  300,
                       115200, 38400, 19200, 9600, 4800, 2400, 1200,  300,
                      };
-    int   i;
+    size_t   i;
     int   status;
     struct termios   Opt;
     tcgetattr(fd, &Opt);

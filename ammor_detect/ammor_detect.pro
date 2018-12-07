@@ -33,9 +33,7 @@ SOURCES += main.cpp \
     serialport.cpp \
     solvepnp.cpp \
     stereo_vision.cpp \
-    RMVideoCapture.cpp \
-    Imagethread.cpp \
-    Structure.cpp
+    RMVideoCapture.cpp
 
 
 
@@ -47,9 +45,7 @@ HEADERS += \
     serialport.h \
     solvepnp.h \
     stereo_vision.h \
-    RMVideoCapture.h \
-    Imagethread.h \
-    Structure.h
+    RMVideoCapture.h
 
 SUBDIRS += \
     ammor_detect.pro

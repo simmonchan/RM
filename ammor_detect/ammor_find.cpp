@@ -31,7 +31,7 @@ void Ammor_find::Color_process(const Mat &src)
     _binary = _binary & thres_whole;
     Mat s = getStructuringElement(MORPH_ELLIPSE,Size(3,3));
     dilate(_binary,_binary,s);
-#ifdef SHOW_DEBUG
+#ifdef IMAGE_DEBUG
     imshow("_binary",_binary);
 #endif
 }
@@ -57,7 +57,7 @@ void Ammor_find::Find_lightbar()
          if(((rRect.size.width > rRect.size.height) && (rRect.angle < -65)) ||
                    ((rRect.size.width < rRect.size.height) && (rRect.angle > -25)))
          {
-#ifdef SHOW_DEBUG
+#ifdef IMAGE_DEBUG
             Point2f points[4];
             rRect.points(points);
             for (int i=0;i<4;i++)
@@ -159,7 +159,7 @@ void Ammor_find::GetArmors()
                         pushdata.armor_points[3] = pt_L2[3];
                         _Armordatas.push_back(pushdata);
                         _ArmorPoints.push_back(armor_center);
-    #ifdef SHOW_DEBUG
+    #ifdef IMAGE_DEBUG
                         double radius = sqrt((pow(ydis,2) + pow(xdis,2)))/2;
                         circle(_src,Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y)),1,Scalar(255),1);
                         circle(_src,Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y)),radius,Scalar(255),2);
@@ -254,7 +254,7 @@ void Ammor_find::img_cut()
   * @param  mode:color mode
   * @return none
   */
-void Ammor_find::detect(Mat &image,bool mode)
+void Ammor_find::detect(const Mat &image,const bool mode,vector<Armordata> &Armordatas, vector<Point> &ArmorPoints, bool &flag)
 {
     _mode = mode;
     _src = image.clone();
@@ -262,6 +262,11 @@ void Ammor_find::detect(Mat &image,bool mode)
     Color_process(_src);
     Find_lightbar();
     GetArmors();
+
+    // get the data
+    Armordatas = _Armordatas;
+    ArmorPoints = _ArmorPoints;
+    flag = _flag;
 }
 
 /**

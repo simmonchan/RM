@@ -14,16 +14,17 @@ using namespace cv;
 using namespace std;
 
 //#define MONOCALUR
-// #define DEBUG
+//#define IMAGE_DEBUG
 //#define PORT_SEND
 
-void ConImageThread(RMVideoCapture &cap, Mat &src, Ammor_find &find)
+static inline bool distance_sort(const Armordata & L1, const Armordata & L2){
+    return L1.distance < L2.distance;
+}
+
+// get the image thread
+void ProImageThread(RMVideoCapture &cap, Mat &src)
 {
     cap >> src;
-    if(!src.empty())
-    {
-        find.detect(src,BLUE_DETECT);
-    }
 }
 
 
@@ -37,7 +38,7 @@ int main()
 #endif
 
     // open the camera and local the camera
-    RMVideoCapture cap0("/dev/video0",3);
+    RMVideoCapture cap0("/dev/video1",3);
     if(cap0.fd!=-1){
         cap0.setVideoFormat(1280,720,1);
         cap0.setExposureTime(0, 10);
@@ -46,9 +47,11 @@ int main()
     }
     else{
         cap0.camnum = -1;
+        cout << "打开相机失败" << endl;
+        return 0;
     }
 
-    RMVideoCapture cap1("/dev/video1",3);
+    RMVideoCapture cap1("/dev/video2",3);
     if(cap1.fd!=-1){
         cap1.setVideoFormat(1280,720,1);
         cap1.setExposureTime(0,10);
@@ -57,6 +60,8 @@ int main()
     }
     else{
         cap1.camnum = -1;
+        cout << "打开相机失败" << endl;
+        return 0;
     }
     RMVideoCapture cap_left,cap_right;
     bool camstatus[2] = {false,false};
@@ -88,12 +93,40 @@ int main()
         camstatus[1] = false;
     }
 
-    // define the using things
+    // define the using things of detect
     Ammor_find Armor_find_left;
     Ammor_find Armor_find_right;
 
     Mat frame_left;
     Mat frame_right;
+
+    vector<Point> Left_points;
+    vector<Point> Right_points;
+
+    vector<Armordata> Left_armor_data;
+    vector<Armordata> Right_armor_data;
+
+    bool Left_flag = false;
+    bool Right_flag = false;
+
+    Mat cameraMatrixL;
+    Mat distCoeffL;
+    Mat cameraMatrixR;
+    Mat distCoeffR;
+
+    double target_width = 13.5;
+    double target_height = 6.5;
+
+    FileStorage camera_xml("camera_calibrate.yaml",FileStorage::READ);
+    camera_xml["cameraMatrixL"] >> cameraMatrixL;
+    camera_xml["distCoeffL"] >> distCoeffL;
+    camera_xml["cameraMatrixR"] >> cameraMatrixR;
+    camera_xml["distCoeffR"] >> distCoeffR;
+    camera_xml.release();
+
+    AngleSolver Left_Solver(cameraMatrixL,distCoeffL,target_width,target_height);
+    AngleSolver Right_Solver(cameraMatrixR,distCoeffR,target_width,target_height);
+    double angle_x = 0.0, angle_y = 0.0;
 
     stereo_vision stereo;
 
@@ -103,49 +136,41 @@ int main()
         QTime time;
         time.start();
 
-        thread left_image_pro(ConImageThread,ref(cap_left),ref(frame_left),ref(Armor_find_left));
-        thread right_image_pro(ConImageThread,ref(cap_right),ref(frame_right),ref(Armor_find_right));
+        thread LeftImagePro(ProImageThread,ref(cap_left),ref(frame_left));
+        thread RightImagePro(ProImageThread,ref(cap_right),ref(frame_right));
 
-        left_image_pro.join();
-        right_image_pro.join();
-#ifdef DEBUG
+        LeftImagePro.join();
+        RightImagePro.join();
+#ifdef IMAGE_DEBUG
         imshow("left",frame_left);
         imshow("right",frame_right);
         waitKey(1);
 #endif
+        thread LeftImageCon(&Ammor_find::detect,Armor_find_left,ref(frame_left),BLUE_DETECT,ref(Left_armor_data),ref(Left_points),ref(Left_flag));
+        thread RightImageCon(&Ammor_find::detect,Armor_find_right,ref(frame_right),BLUE_DETECT,ref(Right_armor_data),ref(Right_points),ref(Right_flag));
 
-        vector<Point> Left_points;
-        vector<Point> Right_points;
+        LeftImageCon.join();
+        RightImageCon.join();
 
-        vector<Armordata> Left_armor_data;
-        vector<Armordata> Right_armor_data;
-
-        if(Armor_find_left._flag && Armor_find_right._flag)
-        {
-            // get the data
-            Left_points = Armor_find_left._ArmorPoints;
-            Right_points = Armor_find_right._ArmorPoints;
-
-            Left_armor_data = Armor_find_left._Armordatas;
-            Right_armor_data = Armor_find_right._Armordatas;
+        if(Left_flag && Right_flag){
 
             if(Left_points.size() == Right_points.size()){
 
                 // sort the distance
                 stereo.stereo_get_distance(Left_points,Right_points,Left_armor_data,Right_armor_data);
-                sort(Left_armor_data.begin(), Left_armor_data.end(),
-                     [](const Armordata & L1, const Armordata & L2) { return L1.distance < L2.distance;});
 
-                sort(Right_armor_data.begin(), Right_armor_data.end(),
-                     [](const Armordata & L1, const Armordata & L2) { return L1.distance < L2.distance;});
+                sort(Left_armor_data.begin(), Left_armor_data.end(),distance_sort);
+                sort(Right_armor_data.begin(), Right_armor_data.end(),distance_sort);
 
                 //memory the last data
                 Armor_find_left._LastArmor = Left_armor_data[0];
                 Armor_find_right._LastArmor = Right_armor_data[0];
+                Armor_find_left._flag = true;
+                Armor_find_right._flag = true;
 #ifdef PORT_SEND
                 // send the data
-                Point final = (Left_armor_data[0].armor_center);
-                vision = {(float)final.x,(float)final.y,Left_armor_data[0].distance,0,1};
+                Left_Solver.getAngle(Left_armor_data[0],angle_x,angle_y,0.0,0.0,Point(0,0));
+                vision = {(float)angle_x,(float)angle_y,Left_armor_data[0].distance,0,1};
                 port.TransformData(vision);
                 port.send();
 #endif
@@ -155,20 +180,22 @@ int main()
 
             else if(Left_points.size() > Right_points.size())
             {
-                Left_points = Armor_find_left._ArmorPoints;
-                Left_armor_data = Armor_find_left._Armordatas;
-
                 // sort the distance
-                stereo.monocular_get_distance(Left_armor_data,LEFT,Point(0,0));
-                sort(Left_armor_data.begin(), Left_armor_data.end(),
-                     [](const Armordata & L1, const Armordata & L2) { return L1.distance < L2.distance;});
+                Left_Solver.get_distance(Left_armor_data,Point(0,0));
+                sort(Left_armor_data.begin(), Left_armor_data.end(),distance_sort);
+
+                Right_Solver.get_distance(Right_armor_data,Point(0,0));
+                sort(Right_armor_data.begin(),Right_armor_data.end(),distance_sort);
 
                 // memory the last data
                 Armor_find_left._LastArmor = Left_armor_data[0];
+                Armor_find_right._LastArmor = Right_armor_data[0];
+                Armor_find_left._flag = true;
+                Armor_find_right._flag = true;
 #ifdef PORT_SEND
                 // send the data
-                Point final = (Left_armor_data[0].armor_center);
-                vision = {(float)final.x,(float)final.y,Left_armor_data[0].distance,0,1};
+                Left_Solver.getAngle(Left_armor_data[0],angle_x,angle_y,0.0,0.0,Point(0,0));
+                vision = {(float)angle_x,(float)angle_y,Left_armor_data[0].distance,0,1};
                 port.TransformData(vision);
                 port.send();
 #endif
@@ -177,77 +204,61 @@ int main()
             }
 
             else{
-                // get the data
-                Right_points = Armor_find_right._ArmorPoints;
-                Right_armor_data = Armor_find_right._Armordatas;
-
                 // sort the distance
-                stereo.monocular_get_distance(Right_armor_data,RIGHT,Point(0,0));
-                sort(Right_armor_data.begin(), Right_armor_data.end(),
-                     [](const Armordata & L1, const Armordata & L2) { return L1.distance < L2.distance;});
+                Left_Solver.get_distance(Left_armor_data,Point(0,0));
+                sort(Left_armor_data.begin(), Left_armor_data.end(),distance_sort);
+
+                Right_Solver.get_distance(Right_armor_data,Point(0,0));
+                sort(Right_armor_data.begin(),Right_armor_data.end(),distance_sort);
 
                 // memory the last data
+                Armor_find_left._LastArmor = Left_armor_data[0];
                 Armor_find_right._LastArmor = Right_armor_data[0];
+                Armor_find_left._flag = true;
+                Armor_find_right._flag = true;
 
 #ifdef PORT_SEND
                 // send the data
-                Point final = (Right_armor_data[0].armor_center);
-                vision = {(float)final.x,(float)final.y,Right_armor_data[0].distance,0,1};
+                Right_Solver.getAngle(Right_armor_data[0],angle_x,angle_y,0.0,0.0,Point(0,0));
+                vision = {(float)angle_x,(float)angle_y,Right_armor_data[0].distance,0,1};
                 port.TransformData(vision);
                 port.send();
 #endif
-
                 Armor_find_left.clear();
                 Armor_find_right.clear();
             }
-
-
-            Armor_find_left.clear();
-            Armor_find_right.clear();
         }
         else if(Armor_find_left._flag){
-            // get the data
-            Left_points = Armor_find_left._ArmorPoints;
-            Left_armor_data = Armor_find_left._Armordatas;
-
-            // sort the distance
-            stereo.monocular_get_distance(Left_armor_data,LEFT,Point(0,0));
-            sort(Left_armor_data.begin(), Left_armor_data.end(),
-                 [](const Armordata & L1, const Armordata & L2) { return L1.distance < L2.distance;});
+            Left_Solver.get_distance(Left_armor_data,Point(0,0));
+            sort(Left_armor_data.begin(), Left_armor_data.end(),distance_sort);
 
             // memory the last data
-            Armor_find_left._LastArmor = Left_armor_data[0];
+            Armor_find_left._flag = false;
+            Armor_find_right._flag = false;
 #ifdef PORT_SEND
             // send the data
-            Point final = (Left_armor_data[0].armor_center);
-            vision = {(float)final.x,(float)final.y,Left_armor_data[0].distance,0,1};
+            Left_Solver.getAngle(Left_armor_data[0],angle_x,angle_y,0.0,0.0,Point(0,0));
+            vision = {(float)angle_x,(float)angle_y,Left_armor_data[0].distance,0,1};
             port.TransformData(vision);
             port.send();
 #endif
-
             Armor_find_left.clear();
             Armor_find_right.clear();
         }
         else if(Armor_find_right._flag){
-            // get the data
-            Right_points = Armor_find_right._ArmorPoints;
-            Right_armor_data = Armor_find_right._Armordatas;
-
-            // sort the distance
-            stereo.monocular_get_distance(Right_armor_data,RIGHT,Point(0,0));
-            sort(Right_armor_data.begin(), Right_armor_data.end(),
-                 [](const Armordata & L1, const Armordata & L2) { return L1.distance < L2.distance;});
+            Right_Solver.get_distance(Right_armor_data,Point(0,0));
+            sort(Right_armor_data.begin(), Right_armor_data.end(),distance_sort);
 
             // memory the last data
-            Armor_find_right._LastArmor = Right_armor_data[0];
+            Armor_find_left._flag = false;
+            Armor_find_right._flag = false;
 #ifdef PORT_SEND
             // send the data
-            Point final = (Right_armor_data[0].armor_center);
-            vision = {(float)final.x,(float)final.y,Right_armor_data[0].distance,0,1};
+            Right_Solver.getAngle(Right_armor_data[0],angle_x,angle_y,0.0,0.0,Point(0,0));
+            vision = {(float)angle_x,(float)angle_y,Right_armor_data[0].distance,0,1};
             port.TransformData(vision);
             port.send();
 #endif
-
             Armor_find_left.clear();
             Armor_find_right.clear();
         }
@@ -262,7 +273,7 @@ int main()
             Armor_find_right.clear();
         }
         qDebug()<<"time:"<<time.elapsed()<<"ms";
-#ifdef DEBUG
+#ifdef IMAGE_DEBUG
         char k = waitKey(1);
         if(k == 'q')
         {

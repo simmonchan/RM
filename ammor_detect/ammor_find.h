@@ -3,6 +3,7 @@
 #include <Header.h>
 
 //#define SHOW_DEBUG
+//#define IMAGE_DEBUG
 
 using namespace std;
 using namespace cv;
@@ -22,7 +23,7 @@ public:
     double GetK(Point2f L1,Point2f L2);
     void sort_Rotated_Point(Point2f _pt[4],Point2f pt[4]);
     void img_cut();
-    void detect(Mat &image,bool mode);
+    void detect(const Mat &image,const bool mode,vector<Armordata> &Armordatas, vector<Point> &ArmorPoints, bool &flag);
     void clear();
 
 public:
