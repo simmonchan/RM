@@ -1,4 +1,4 @@
-#include "solvepnp.h"
+#include "include/Stereo_vision/solvepnp.h"
 
 /*********************AngleSolver类***************/
 
@@ -24,12 +24,12 @@ void AngleSolver::solvePnP4Points(const std::vector<cv::Point2f> & points2d, cv:
 
     // 旋转向量转为旋转矩阵
     cv::Mat r;
-    cv::solvePnP(point3d, points2d, cam_matrix, distortion_coeff, r, trans);
+    cv::solvePnP(point3d, points2d, cam_matrix, distortion_coeff, r, trans,false,SOLVEPNP_EPNP);
     Rodrigues(r, rot);
 }
 
 // 得到目标的像素坐标
-void AngleSolver::getTarget2dPoinstion(Point points2d[4],std::vector<cv::Point2f> & target2d, const cv::Point2f & offset = Point2f(0,0)){
+void AngleSolver::getTarget2dPoinstion(Point2f points2d[4],std::vector<cv::Point2f> & target2d, const cv::Point2f & offset = Point2f(0,0)){
     // 确定装甲板的四个像素
     Point2f lu, ld, ru, rd;
     lu = points2d[0];
@@ -93,15 +93,13 @@ bool AngleSolver::getAngle(Armordata armordata, double & angle_x, double & angle
 
     tranformationCamera2PTZ(position_in_camera, position_in_ptz);
 
-    position_in_camera.at<double>(2, 0) = scale_z * position_in_camera.at<double>(2, 0);
-
     adjustPTZ2Barrel(position_in_ptz, angle_x, angle_y, bullet_speed, current_ptz_angle);
 
     return true;
 }
 
 // 单目计算距离
-void AngleSolver::get_distance(vector<Armordata> Armordatas,const cv::Point2f & offset)
+void AngleSolver::get_distance(vector<Armordata> &Armordatas,const cv::Point2f & offset)
 {
     for(size_t i=0;i<Armordatas.size();i++){
 

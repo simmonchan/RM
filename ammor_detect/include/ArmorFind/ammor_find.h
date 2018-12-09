@@ -1,8 +1,9 @@
 #ifndef AMMOR_FIND_H
 #define AMMOR_FIND_H
-#include <Header.h>
+#include <include/Header.h>
 
 //#define SHOW_DEBUG
+//#define IMAGE_DEBUG
 
 using namespace std;
 using namespace cv;
@@ -22,21 +23,22 @@ public:
     double GetK(Point2f L1,Point2f L2);
     void sort_Rotated_Point(Point2f _pt[4],Point2f pt[4]);
     void img_cut();
-    void detect(Mat &image,bool mode);
+    void detect(const Mat &image,const bool mode,vector<Armordata> &Armordatas, vector<Point2f> &ArmorPoints, bool &flag);
     void clear();
 
 public:
     vector<Armordata> _Armordatas;
-    vector<Point> _ArmorPoints;
+    vector<Point2f> _ArmorPoints;
     Armordata _LastArmor;
     bool _flag;
 private:
-    InitParams _params;
-    bool _mode;
     Mat _src;
     Mat _binary;
+    InitParams _params;
+    bool _mode;
     vector<RotatedRect> _Rect_led;
     uchar _ArmorLostDelay;
+
 };
 
 #endif // AMMOR_FIND_H

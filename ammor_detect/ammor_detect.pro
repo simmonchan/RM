@@ -28,24 +28,25 @@ LIBS += /usr/local/lib/libopencv_highgui.so.3.3 \
         /usr/local/lib/libopencv_dnn.so.3.3
 
 SOURCES += main.cpp \
-    ammor_find.cpp \
-    CRC_Check.cpp \
-    serialport.cpp \
-    solvepnp.cpp \
-    stereo_vision.cpp \
-    RMVideoCapture.cpp
+    src/ArmorFind/ammor_find.cpp\
+    src/Camera/camera_calibration.cpp\
+    src/Camera/RMVideoCapture.cpp\
+    src/Serial/CRC_Check.cpp\
+    src/Serial/serialport.cpp\
+    src/Stereo_vision/solvepnp.cpp\
+    src/Stereo_vision/stereo_vision.cpp
 
 
 
 
-HEADERS += \
-    ammor_find.h \
-    CRC_Check.h \
-    Header.h \
-    serialport.h \
-    solvepnp.h \
-    stereo_vision.h \
-    RMVideoCapture.h
+HEADERS += include/Header.h\
+    include/ArmorFind/ammor_find.h\
+    include/Camera/camera_calibration.h\
+    include/Camera/RMVideoCapture.h\
+    include/Serial/CRC_Check.h\
+    include/Serial/serialport.h\
+    include/Stereo_vision/solvepnp.h\
+    include/Stereo_vision/stereo_vision.h
 
 SUBDIRS += \
     ammor_detect.pro

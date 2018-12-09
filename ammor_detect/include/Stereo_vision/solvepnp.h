@@ -1,4 +1,4 @@
-#include "Header.h"
+#include "include/Header.h"
 using namespace std;
 using namespace cv;
 
@@ -38,11 +38,11 @@ public:
         offset_y_barrel_ptz = y_offset_barrel_ptz;
     }
     void solvePnP4Points(const std::vector<cv::Point2f> & points2d, cv::Mat & rot, cv::Mat & trans);
-    void getTarget2dPoinstion(Point points2d[4], std::vector<cv::Point2f> & target2d, const cv::Point2f & offset);
+    void getTarget2dPoinstion(Point2f points2d[4], std::vector<cv::Point2f> & target2d, const cv::Point2f & offset);
     void tranformationCamera2PTZ(const cv::Mat & pos, cv::Mat & transed_pos);
     void adjustPTZ2Barrel(const cv::Mat & pos_in_ptz, double & angle_x, double & angle_y, double bullet_speed, double current_ptz_angle);
     bool getAngle(Armordata armordata, double & angle_x, double & angle_y, double bullet_speed, double current_ptz_angle, const cv::Point2f & offset);
-    void get_distance(vector<Armordata> Armordatas,const cv::Point2f & offset);
+    void get_distance(vector<Armordata> &Armordatas,const cv::Point2f & offset);
 
 
 

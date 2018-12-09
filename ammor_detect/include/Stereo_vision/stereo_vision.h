@@ -1,14 +1,12 @@
 #ifndef STEREO_VISION_H
 #define STEREO_VISION_H
-#include "Header.h"
-
-//#define SHOW_DEBUG
+#include "include/Header.h"
 
 class stereo_vision
 {
 public:
     stereo_vision();
-    void stereo_get_distance(vector<Point> &Left, vector<Point> &Right,vector<Armordata> &L_data, vector<Armordata> R_data);
+    void stereo_get_distance(vector<Point2f> &Left, vector<Point2f> &Right,vector<Armordata> &L_data, vector<Armordata> &R_data );
 private:
     // 相机内参
     Mat cameraMatrixL;

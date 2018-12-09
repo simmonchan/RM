@@ -1,4 +1,4 @@
-#include "ammor_find.h"
+#include "include/ArmorFind/ammor_find.h"
 
 Ammor_find::Ammor_find(){
     _flag = false;
@@ -32,7 +32,7 @@ void Ammor_find::Color_process(const Mat &src)
     Mat s = getStructuringElement(MORPH_ELLIPSE,Size(3,3));
     dilate(_binary,_binary,s);
 #ifdef IMAGE_DEBUG
-    imshow("_binary",_binary);
+    //imshow("_binary",_binary);
 #endif
 }
 
@@ -45,7 +45,7 @@ void Ammor_find::Find_lightbar()
 {
     // to find the light bars and sort
     vector<vector<Point>> contours;
-    findContours(_binary,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE);
+    findContours(_binary,contours,CV_RETR_EXTERNAL,CV_CHAIN_APPROX_SIMPLE,_LastArmor.armor_points[0]);
     size_t contours_size = contours.size();
 
     for (size_t i=0;i<contours_size;i++)
@@ -79,7 +79,7 @@ void Ammor_find::Find_lightbar()
   */
 void Ammor_find::GetArmors()
 {
-    if(_Rect_led.size() > 2)
+    if(_Rect_led.size() >= 2)
     {
         sort(_Rect_led.begin(),_Rect_led.end(),RotateRectSort);
         Point2f L1,L2;
@@ -151,7 +151,7 @@ void Ammor_find::GetArmors()
                         else{
                            pushdata.armor = pushdata.small_armor;
                         }
-                        Point armor_center = Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y));
+                        Point2f armor_center = Point2f(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y));
                         pushdata.armor_center = armor_center;
                         pushdata.armor_points[0] = pt_L1[0];
                         pushdata.armor_points[1] = pt_L1[1];
@@ -229,22 +229,21 @@ void Ammor_find::img_cut()
         Point lu = _LastArmor.armor_points[0];
         Point rd = _LastArmor.armor_points[3];
 
-        int width = rd.x - lu.x;
-        int height = rd.y - lu.y;
+        int width = (rd.x - lu.x) > 0 ? (rd.x - lu.x) : 0;
+        int height = (rd.y - lu.y) > 0 ? (rd.y - lu.y) : 0;
 
-        if(width > 0 && height > 0){
-            Rect Last_rect(lu,Size(width,height));
+        int top = (lu.y - height*2)  > 0 ? (lu.y - height*2) : 1;
+        int down = (rd.y + height*2) < 720 ? (rd.y + height*2) : 719;
+        int left = (lu.x - width*0.8) > 0 ? (lu.x - width * 0.8) : 1;
+        int right = (rd.x + width *0.8) < 1280 ? (rd.x + width *0.8) : 1279;
 
-            // resize the rect
-            Size size(width*1.25,height*1.3);
-            Last_rect += size;
-            Point pt;
-            pt.x = cvRound(size.width/2);
-            pt.y = cvRound(size.height/2);
-            Last_rect -= pt;
-
-            _src = _src(Last_rect);
+        if (top < down && left < right){
+            _src = _src(Range(top,down),Range(left,right));
+            _LastArmor.armor_points[0] = Point(left,top);
         }
+    }
+    if(!_flag){
+        _LastArmor.armor_points[0] = Point2f(0.0,0.0);
     }
 }
 
@@ -254,14 +253,17 @@ void Ammor_find::img_cut()
   * @param  mode:color mode
   * @return none
   */
-void Ammor_find::detect(const Mat &image,const bool mode,vector<Armordata> &Armordatas, vector<Point> &ArmorPoints, bool &flag)
+void Ammor_find::detect(const Mat &image,const bool mode,vector<Armordata> &Armordatas, vector<Point2f> &ArmorPoints, bool &flag)
 {
     _mode = mode;
     _src = image.clone();
-    //img_cut();
+    img_cut();
     Color_process(_src);
     Find_lightbar();
     GetArmors();
+#ifdef IMAGE_DEBUG
+    //imshow("_src",_src);
+#endif
 
     // get the data
     Armordatas = _Armordatas;

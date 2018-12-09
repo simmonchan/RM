@@ -15,7 +15,7 @@ CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFT
 IN THE SOFTWARE.
 *******************************************************************************************************************/
 
-#include "RMVideoCapture.h"
+#include "include/Camera/RMVideoCapture.h"
 #include "linux/videodev2.h"
 
 #include <stdio.h>
@@ -38,7 +38,16 @@ RMVideoCapture::RMVideoCapture(const char * device, int size_buffer) : video_pat
     mb = new MapBuffer[buffer_size];
 }
 
-// 重新开启设备
+RMVideoCapture::~RMVideoCapture(){
+    close(fd);
+    delete [] mb;
+}
+
+/**
+  * @brief restart the device
+  * @param  none
+  * @return none
+  */
 void RMVideoCapture::restartCapture(){
     close(fd);
     fd = open(video_path, O_RDWR);
@@ -46,12 +55,12 @@ void RMVideoCapture::restartCapture(){
     cur_frame = 0;
 }
 
-RMVideoCapture::~RMVideoCapture(){
-    close(fd);
-    delete [] mb;
-}
-
-// 把得到的图片转为Mat
+/**
+  * @brief change the image to Mat
+  * @param  void *data
+  * @param  image:the image
+  * @return bool
+  */
 void RMVideoCapture::cvtRaw2Mat(const void * data, cv::Mat & image){
     if (format == V4L2_PIX_FMT_MJPEG){
         cv::Mat src(capture_height, capture_width, CV_8UC3, (void*) data);
@@ -63,7 +72,11 @@ void RMVideoCapture::cvtRaw2Mat(const void * data, cv::Mat & image){
     }
 }
 
-// 得到每一帧
+/**
+  * @brief get the image
+  * @param  image:the image of Mat
+  * @return none
+  */
 RMVideoCapture & RMVideoCapture::operator >> (cv::Mat & image) {
 //    std::cout << "current buffr idx: " << buffr_idx << std::endl;
     struct v4l2_buffer bufferinfo = {0};
@@ -90,11 +103,15 @@ RMVideoCapture & RMVideoCapture::operator >> (cv::Mat & image) {
     }
     ++buffr_idx;
     buffr_idx = buffr_idx >= buffer_size ? buffr_idx - buffer_size : buffr_idx;
-    //++cur_frame;
+    ++cur_frame;
     return *this;
 }
 
-// 映射初始化
+/**
+  * @brief init MMAP and put the buffer to query
+  * @param  none
+  * @return bool
+  */
 bool RMVideoCapture::initMMap(){
     /*
      申请和管理缓冲区，应用程序和设备有三种交换数据的方法，直接read/write ，内存映射(memorymapping) ，用户指针。这里只讨论 memorymapping.
@@ -198,7 +215,11 @@ bool RMVideoCapture::initMMap(){
     return true;
 }
 
-// 开始采集
+/**
+  * @brief to start catch the stream
+  * @param  none
+  * @return bool
+  */
 bool RMVideoCapture::startStream(){
 
     /*
@@ -219,7 +240,11 @@ bool RMVideoCapture::startStream(){
     return true;
 }
 
-// 结束采集
+/**
+  * @brief to close catch the stream
+  * @param  none
+  * @return bool
+  */
 bool RMVideoCapture::closeStream(){
     cur_frame = 0;
     buffr_idx = 0;
@@ -234,7 +259,12 @@ bool RMVideoCapture::closeStream(){
     return true;
 }
 
-// 设置曝光
+/**
+  * @brief to set the exposure time
+  * @param  auto_exp: 0
+  * @param  t: the exposure value
+  * @return bool
+  */
 bool RMVideoCapture::setExposureTime(bool auto_exp, int t){
     if (auto_exp){
         struct v4l2_control control_s;
@@ -264,7 +294,13 @@ bool RMVideoCapture::setExposureTime(bool auto_exp, int t){
     return true;
 }
 
-// 改变相机的格式
+/**
+  * @brief to change the Video Format and restart the device
+  * @param  width
+  * @param  height
+  * @param  mijg: to choose YUV or MJPG
+  * @return bool
+  */
 bool RMVideoCapture::changeVideoFormat(int width, int height, bool mjpg){
     closeStream();
     restartCapture();
@@ -273,7 +309,13 @@ bool RMVideoCapture::changeVideoFormat(int width, int height, bool mjpg){
     return true;
 }
 
-// 设置相机的格式
+/**
+  * @brief to set the Video Format
+  * @param  width
+  * @param  height
+  * @param  mijg: to choose YUV or MJPG
+  * @return bool
+  */
 bool RMVideoCapture::setVideoFormat(int width, int height, bool mjpg){
     /*struct v4l2_format fmt = {
                     .type = V4L2_BUF_TYPE_VIDEO_CAPTURE,
@@ -308,7 +350,11 @@ bool RMVideoCapture::setVideoFormat(int width, int height, bool mjpg){
     return true;
 }
 
-// 重置相机的格式
+/**
+  * @brief  refresh the Video Format
+  * @param  none
+  * @return bool
+  */
 bool RMVideoCapture::refreshVideoFormat(){
     struct v4l2_format fmt = {0};
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -322,7 +368,12 @@ bool RMVideoCapture::refreshVideoFormat(){
     return true;
 }
 
-// 得到分辨率
+/**
+  * @brief  to get the videoSize
+  * @param  width
+  * @param  height
+  * @return bool
+  */
 bool RMVideoCapture::getVideoSize(int & width, int & height){
     if (capture_width == 0 || capture_height == 0){
         if (refreshVideoFormat() == false)
@@ -333,7 +384,11 @@ bool RMVideoCapture::getVideoSize(int & width, int & height){
     return true;
 }
 
-// 设置帧率
+/**
+  * @brief  to set the fps
+  * @param  fps
+  * @return bool
+  */
 bool RMVideoCapture::setVideoFPS(int fps){
     struct v4l2_streamparm stream_param = {0};
     stream_param.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
@@ -347,7 +402,11 @@ bool RMVideoCapture::setVideoFPS(int fps){
     return true;
 }
 
-// 改变缓冲区的帧数
+/**
+  * @brief  to set the bufferSize
+  * @param  bsize:buffer_size
+  * @return bool
+  */
 bool RMVideoCapture::setBufferSize(int bsize){
     if (buffer_size != bsize){
         buffer_size = bsize;
@@ -356,7 +415,11 @@ bool RMVideoCapture::setBufferSize(int bsize){
     }
 }
 
-// 得到相机的信息
+/**
+  * @brief  to get the camera info
+  * @param  none
+  * @return bool
+  */
 void RMVideoCapture::info(){
     /*
      头文件 ：<linux/videodev2.h>
@@ -498,14 +561,16 @@ void RMVideoCapture::info(){
             (float)streamparm.parm.capture.timeperframe.numerator);
 }
 
-// 重载了v4l2的ioctl
+/**
+  * @brief  chongzai ioctl
+  * @param  fd: the video_file
+  * @param  request:iotcl type
+  * @param  arg:the value
+  * @return bool
+  */
 int RMVideoCapture::xioctl(int fd, int request, void *arg){
     int r;
     do r = ioctl (fd, request, arg);
     while (-1 == r && EINTR == errno);
     return r;
 }
-
-
-
-

@@ -1,6 +1,8 @@
 #ifndef HEADER_H
 #define HEADER_H
 
+#include <QTime>
+#include <QDebug>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -9,6 +11,10 @@
 #include <opencv2/dnn/dnn.hpp>
 #include <iostream>
 #include <thread>
+
+//#define SHOW_DEBUG
+#define IMAGE_DEBUG
+#define PORT_SEND
 
 #define BLUE_DETECT true
 #define RED_DETECT false
@@ -45,7 +51,7 @@ typedef struct{
     }armor_type;
     Point armor_center = Point(0,0);
     float distance = 0.0;//mm
-    Point armor_points[4] = {Point(0,0),Point(0,0),Point(0,0),Point(0,0)};
+    Point2f armor_points[4] = {Point(0,0),Point(0,0),Point(0,0),Point(0,0)};
     armor_type armor = small_armor;
 }Armordata;
 

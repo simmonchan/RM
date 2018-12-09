@@ -1,4 +1,4 @@
-#include "camera_calibration.h"
+#include "include/Camera/camera_calibration.h"
 
 void camera_calibration(int image_num,Size chessboard_one)
 {
@@ -155,21 +155,20 @@ void camera_calibration(int image_num,Size chessboard_one)
 void camera_two_calibration()
 {
     /**************************************标定参数********************************************/
-    Mat cameraMatrixL = (Mat_<double>(3, 3) << 1849.3, 0, 667.5,
-                         0, 1849.0, 331.4,
+    Mat cameraMatrixL = (Mat_<double>(3, 3) << 2918.3, 0, 740.5,
+                         0, 2909.4, 366.6,
                          0, 0, 1);
-    Mat distCoeffL = (Mat_<double>(5, 1) << -0.5695, -0.5328,4.6069e-04 -0.0050,0.0);
+    Mat distCoeffL = (Mat_<double>(5, 1) << -0.5554, -11.1953,0.0238 ,-0.0017,0.0);
 
-    Mat cameraMatrixR = (Mat_<double>(3, 3) << 1914.4, 0, 637.1,
-        0, 1911.5, 330.3,
+    Mat cameraMatrixR = (Mat_<double>(3, 3) << 2789.3, 0, 739.1,
+        0, 2776.7, 291.4,
         0, 0, 1);
-    Mat distCoeffR = (Mat_<double>(5, 1) << -0.7938 ,0.9611, 0.0035 -0.0046 , 0.0);
+    Mat distCoeffR = (Mat_<double>(5, 1) << -0.5554, -1.4539, 0.0154, 0.0023 , 0.0);
 
-
-    Mat T = (Mat_<double>(3, 1) << -193.7995,-0.2509,-12.5183);//T平移向量
-    Mat R = (Mat_<double>(3, 3) << 0.9997, -0.0111, -0.0240,
-             0.0123, 0.9998, 0.0471,
-             0.0234, -0.0473, 0.9986);//R旋转向量
+    Mat T = (Mat_<double>(3, 1) << -191.3586 ,-2.7133 ,-25.1675);//T平移向量
+    Mat R = (Mat_<double>(3, 3) << 0.9972, -0.0105,  -0.0745,
+             0.0169, 0.9961, 0.0861,
+             0.0733, -0.0871,  0.9935);//R旋转向量
 
 
     /****************************************标定函数需要的参数*************************************/
