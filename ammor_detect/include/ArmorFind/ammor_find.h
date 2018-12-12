@@ -2,9 +2,6 @@
 #define AMMOR_FIND_H
 #include <include/Header.h>
 
-//#define SHOW_DEBUG
-//#define IMAGE_DEBUG
-
 using namespace std;
 using namespace cv;
 
@@ -17,13 +14,13 @@ class Ammor_find
 {
 public:
     Ammor_find();
-    void Color_process(const Mat &src);
+    void Color_process(Mat &src);
     void Find_lightbar();
     void GetArmors();
     double GetK(Point2f L1,Point2f L2);
     void sort_Rotated_Point(Point2f _pt[4],Point2f pt[4]);
     void img_cut();
-    void detect(const Mat &image,const bool mode,vector<Armordata> &Armordatas, vector<Point2f> &ArmorPoints, bool &flag);
+    void detect(const Mat &image,const bool mode,const uchar Fordebug);
     void clear();
 
 public:
@@ -38,6 +35,7 @@ private:
     bool _mode;
     vector<RotatedRect> _Rect_led;
     uchar _ArmorLostDelay;
+    uchar _ForDebug;
 
 };
 

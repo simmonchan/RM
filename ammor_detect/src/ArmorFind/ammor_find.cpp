@@ -1,9 +1,14 @@
 #include "include/ArmorFind/ammor_find.h"
 
 Ammor_find::Ammor_find(){
-    _flag = false;
     _mode = GET_NO;
     _ArmorLostDelay = 0;
+    //namedWindow("left_binary");
+    //namedWindow("right_binary");
+#ifdef IMAGE_DEBUG
+    namedWindow("left_src");
+    namedWindow("right_src");
+#endif
 }
 
 /**
@@ -11,7 +16,7 @@ Ammor_find::Ammor_find(){
   * @param src: the image of frame
   * @return none
   */
-void Ammor_find::Color_process(const Mat &src)
+void Ammor_find::Color_process(Mat &src)
 {
     Mat thres_whole;
     vector<Mat> splited(3);
@@ -29,10 +34,14 @@ void Ammor_find::Color_process(const Mat &src)
     Mat contourThreadkernel = getStructuringElement(MORPH_ELLIPSE,Size(9,9));
     dilate(_binary,_binary,contourThreadkernel);
     _binary = _binary & thres_whole;
-    Mat s = getStructuringElement(MORPH_ELLIPSE,Size(3,3));
-    dilate(_binary,_binary,s);
+//    Mat s = getStructuringElement(MORPH_ELLIPSE,Size(3,3));
+//    dilate(_binary,_binary,s);
 #ifdef IMAGE_DEBUG
-    //imshow("_binary",_binary);
+//    if(_ForDebug == 1){
+//        imshow("left_binary",_binary);
+//    }else if(_ForDebug == 2){
+//        imshow("right_binary",_binary);
+//    }
 #endif
 }
 
@@ -239,7 +248,10 @@ void Ammor_find::img_cut()
 
         if (top < down && left < right){
             _src = _src(Range(top,down),Range(left,right));
-            _LastArmor.armor_points[0] = Point(left,top);
+            _LastArmor.armor_points[0] = Point2f(left,top);
+        }
+        else{
+            _LastArmor.armor_points[0] = Point2f(0,0);
         }
     }
     if(!_flag){
@@ -253,8 +265,10 @@ void Ammor_find::img_cut()
   * @param  mode:color mode
   * @return none
   */
-void Ammor_find::detect(const Mat &image,const bool mode,vector<Armordata> &Armordatas, vector<Point2f> &ArmorPoints, bool &flag)
+void Ammor_find::detect(const Mat &image,const bool mode,const uchar Fordebug)
 {
+    clear();
+    _ForDebug = Fordebug;
     _mode = mode;
     _src = image.clone();
     img_cut();
@@ -262,13 +276,13 @@ void Ammor_find::detect(const Mat &image,const bool mode,vector<Armordata> &Armo
     Find_lightbar();
     GetArmors();
 #ifdef IMAGE_DEBUG
-    //imshow("_src",_src);
+    if(_ForDebug == 1){
+        imshow("left_src",_src);
+    }
+    else if (_ForDebug == 2){
+       imshow("right_src",_src);
+    }
 #endif
-
-    // get the data
-    Armordatas = _Armordatas;
-    ArmorPoints = _ArmorPoints;
-    flag = _flag;
 }
 
 /**

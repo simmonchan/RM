@@ -34,7 +34,8 @@ SOURCES += main.cpp \
     src/Serial/CRC_Check.cpp\
     src/Serial/serialport.cpp\
     src/Stereo_vision/solvepnp.cpp\
-    src/Stereo_vision/stereo_vision.cpp
+    src/Stereo_vision/stereo_vision.cpp \
+    src/ArmorFind/armorpredict.cpp
 
 
 
@@ -46,7 +47,8 @@ HEADERS += include/Header.h\
     include/Serial/CRC_Check.h\
     include/Serial/serialport.h\
     include/Stereo_vision/solvepnp.h\
-    include/Stereo_vision/stereo_vision.h
+    include/Stereo_vision/stereo_vision.h \
+    include/ArmorFind/armorpredict.h
 
 SUBDIRS += \
     ammor_detect.pro

@@ -2,22 +2,17 @@
 #define STEREO_VISION_H
 #include "include/Header.h"
 
+
+
 class stereo_vision
 {
 public:
     stereo_vision();
-    void stereo_get_distance(vector<Point2f> &Left, vector<Point2f> &Right,vector<Armordata> &L_data, vector<Armordata> &R_data );
+    stereo_vision(const string &yamlfile);
+    void Init(const string &yamlfile);
+    //void cal_coordinate(const Point2f &left, const Point2f &right, AbsPosition &Position);
 private:
-    // 相机内参
-    Mat cameraMatrixL;
-    Mat distCoeffL;
-    Mat cameraMatrixR;
-    Mat distCoeffR;
-    // 旋转矩阵，投影矩阵，反投影矩阵
-    Mat Rl;
-    Mat Rr;
-    Mat Pl;
-    Mat Pr;
+    // 反投影矩阵
     Mat Q;
 };
 
