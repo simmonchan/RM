@@ -13,8 +13,8 @@
 #include <thread>
 
 //#define SHOW_DEBUG
-#define IMAGE_DEBUG
-#define PORT_SEND
+//#define IMAGE_DEBUG
+//#define PORT_SEND
 
 #define BLUE_DETECT true
 #define RED_DETECT false
@@ -43,6 +43,13 @@ struct InitParams{
     }
 
 };
+
+typedef struct{
+    float x;
+    float y;
+    float z;
+    int index;
+}AbsPosition;
 
 typedef struct{
     typedef enum{

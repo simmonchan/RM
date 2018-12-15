@@ -2,18 +2,29 @@
 #define STEREO_VISION_H
 #include "include/Header.h"
 
-
-
 class stereo_vision
 {
 public:
     stereo_vision();
-    stereo_vision(const string &yamlfile);
-    void Init(const string &yamlfile);
-    //void cal_coordinate(const Point2f &left, const Point2f &right, AbsPosition &Position);
+    void Init(const string &yaml);
+    void setAxis(float x, float y, float z){
+        x_tranz = x;
+        y_tranz = y;
+        z_tranz = z;
+    }
+    void get_location(const vector<Point2f> &left, const vector<Point2f> &right, vector<AbsPosition> &Result);
 private:
-    // 反投影矩阵
+    Mat cameraMatrixL;
+    Mat cameraMatrixR;
+    Mat distCoeffL;
+    Mat distCoeffR;
+    Mat Rl;
+    Mat Pl;
+    Mat Rr;
+    Mat Pr;
     Mat Q;
+
+    float x_tranz, y_tranz, z_tranz;
 };
 
 #endif // STEREO_VISION_H

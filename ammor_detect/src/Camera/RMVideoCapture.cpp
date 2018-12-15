@@ -561,6 +561,18 @@ void RMVideoCapture::info(){
             (float)streamparm.parm.capture.timeperframe.numerator);
 }
 
+bool RMVideoCapture::setSaturation(int Saturation){
+    struct v4l2_control SATURATION;
+    SATURATION.id = V4L2_CID_SATURATION;
+    SATURATION.value = Saturation;
+    if(xioctl(fd,VIDIOC_S_CTRL,&SATURATION) < 0)
+    {
+        perror("can't set the satutation\n");
+        return false;
+    }
+    return true;
+}
+
 /**
   * @brief  chongzai ioctl
   * @param  fd: the video_file

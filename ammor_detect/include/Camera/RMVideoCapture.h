@@ -32,6 +32,7 @@ public:
 
     bool setVideoFPS(int fps);
     bool setBufferSize(int bsize);
+    bool setSaturation(int Satutation);
     void restartCapture();
     int getFrameCount(){
         return cur_frame;

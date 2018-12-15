@@ -14,16 +14,16 @@
 using namespace cv;
 extern long long frame_count_last;
 extern FILE *flog;
-extern uint8_t image_buffer[307200];        //640*480图像数据
+extern uint8_t image_buffer[921600];        //1280*720图像数据
 extern int image_buffer_len;
 void printlog(const char *format,...);
-uint8_t getImageFromMemory();
+//uint8_t getImageFromMemory();
 uint8_t getImageFromMemory(Mat &image);
 
 struct shared_package{
     pthread_rwlock_t image_lock=PTHREAD_RWLOCK_INITIALIZER;
     int image_size;
-    char image_data[307200];        //640*480图像数据
+    char image_data[921600];        //1280*720图像数据
     long long count;
 
 };

@@ -17,7 +17,6 @@ void ProImageThread(RMVideoCapture &cap, Mat &src)
     cap >> src;
 }
 
-
 int main()
 {
 #ifdef PORT_SEND
@@ -27,10 +26,11 @@ int main()
 #endif
 
     // open the camera and local the camera
-    RMVideoCapture cap0("/dev/video0",3);
+    RMVideoCapture cap0("/dev/video1",3);
     if(cap0.fd!=-1){
         cap0.setVideoFormat(1280,720,1);
         cap0.setExposureTime(0, 10);
+        cap0.setSaturation(100);
         cap0.startStream();
         cap0.info();
     }
@@ -40,10 +40,11 @@ int main()
         return 0;
     }
 
-    RMVideoCapture cap1("/dev/video1",3);
+    RMVideoCapture cap1("/dev/video2",3);
     if(cap1.fd!=-1){
         cap1.setVideoFormat(1280,720,1);
         cap1.setExposureTime(0,10);
+        cap1.setSaturation(100);
         cap1.startStream();
         cap1.info();
     }
@@ -87,13 +88,31 @@ int main()
     vector<Armordata> Left_armor_data, Right_armor_data;
     uchar Left_flag = 1, Right_flag = 2;
 
-    ArmorPredict cal_angle;
+    AngleSolver Left_PnP,Right_PnP;
+    stereo_vision Stereo;
+    Mat cameraMatrixL,cameraMatrixR,distCoeffL,distCoeffR;
+    FileStorage stereo_yaml("/home/chan/Work/build-ammor_detect/camera_calibrate.yaml",FileStorage::READ);
+    stereo_yaml["cameraMatrixL"] >> cameraMatrixL;
+    stereo_yaml["cameraMatrixR"] >> cameraMatrixR;
+    stereo_yaml["distCoeffL"] >> distCoeffL;
+    stereo_yaml["distCoeffR"] >> distCoeffR;
+    Left_PnP.Init(cameraMatrixL,distCoeffL,13.5,6.5);
+    Right_PnP.Init(cameraMatrixR,distCoeffR,13.5,6.5);
+    Left_PnP.set_Axis(110,110,90);
+    Right_PnP.set_Axis(110,110,90);
+    Stereo.setAxis(110,110,90);
+
+    ArmorPredict Predict;
+    vector<AbsPosition> Positions;
+
+    cout << "各个类的参数设置完成" << endl;
 
     while(camstatus[0] && camstatus[1])
     {
         QTime time;
         time.start();
 
+        // get the image
         thread LeftImagePro(ProImageThread,ref(cap_left),ref(frame_left));
         thread RightImagePro(ProImageThread,ref(cap_right),ref(frame_right));
         LeftImagePro.join();
@@ -102,8 +121,12 @@ int main()
 #ifdef IMAGE_DEBUG
         imshow("left_frame",frame_left);
         imshow("right_frmae",frame_right);
+        namedWindow("left_binary");
+        namedWindow("right_binary");
+        namedWindow("left_src");
+        namedWindow("right_src");
 #endif
-
+        // process the image
         thread LeftImageCon(&Ammor_find::detect,&Armor_find_left,ref(frame_left),BLUE_DETECT,Left_flag);
         thread RightImageCon(&Ammor_find::detect,&Armor_find_right,ref(frame_right),BLUE_DETECT,Right_flag);
         LeftImageCon.join();
@@ -114,10 +137,29 @@ int main()
         Left_armor_data = Armor_find_left._Armordatas;
         Right_armor_data = Armor_find_right._Armordatas;
 
-        cal_angle.Predict(Left_points,Right_points,Left_armor_data,Right_armor_data);
+        size_t Left_size = Left_points.size();
+        size_t Right_size = Right_points.size();
+        if(Left_size == 0 && Right_size == 0){
 
-        Armor_find_left._LastArmor = Left_armor_data[cal_angle.Result.index];
-        Armor_find_right._LastArmor = Right_armor_data[cal_angle.Result.index];
+            memset(&Predict.Vision,0,sizeof(VisionData));
+        }
+        else if(Left_size!=0 || Right_size != 0){
+
+            if(Left_size == Right_size){
+                Stereo.get_location(Left_points,Right_points,Positions);
+                Predict.Predict(Positions);
+                Armor_find_left._LastArmor = Left_armor_data[Predict.Result.index];
+                Armor_find_right._LastArmor = Right_armor_data[Predict.Result.index];
+            }
+            else if(Left_size > Right_size){
+                Left_PnP.get_location(Left_armor_data,Positions);
+                Predict.Predict(Positions);
+            }
+            else if(Left_size < Right_size){
+                Right_PnP.get_location(Right_armor_data,Positions);
+                Predict.Predict(Positions);
+            }
+        }
 
 #ifdef PORT_SEND
         port.TransformData(cal_angle.Vision);

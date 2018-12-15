@@ -27,16 +27,17 @@ public:
     vector<Armordata> _Armordatas;
     vector<Point2f> _ArmorPoints;
     Armordata _LastArmor;
-    bool _flag;
 private:
     Mat _src;
     Mat _binary;
     InitParams _params;
     bool _mode;
+    vector<RotatedRect> RectfirstResult;
+    vector<vector<RotatedRect> > Armorlists;
+    vector<int> CellMaxs;
     vector<RotatedRect> _Rect_led;
-    uchar _ArmorLostDelay;
+    int _ArmorLostDelay;
     uchar _ForDebug;
-
 };
 
 #endif // AMMOR_FIND_H
