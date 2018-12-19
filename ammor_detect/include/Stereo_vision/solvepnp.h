@@ -28,7 +28,7 @@ public:
 
     void solvePnP4Points(cv::Mat &trans);
     void getTarget2dPoinstion(Point2f points2d[4]);
-    void get_location(vector<Armordata> &Armor,vector<AbsPosition> Result);
+    void get_location(vector<Armordata> &Armor,vector<AbsPosition> &Result);
     void clear();
 
 private:

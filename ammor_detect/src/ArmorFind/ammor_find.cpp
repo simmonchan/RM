@@ -28,14 +28,20 @@ void Ammor_find::Color_process(Mat &src)
     Mat contourkernel = getStructuringElement(MORPH_ELLIPSE,Size(9,9));
     dilate(_binary,_binary,contourkernel);
     _binary = _binary & thres_whole;
-//    Mat s = getStructuringElement(MORPH_ELLIPSE,Size(3,3));
-//    dilate(_binary,_binary,s);
-#ifdef IMAGE_DEBUG
-    if(_ForDebug == 1){
-        imshow("left_binary",_binary);
-    }else if(_ForDebug == 2){
-        imshow("right_binary",_binary);
+    if(_LastArmor.distance > 2000)
+    {
+        Mat s = getStructuringElement(MORPH_RECT,Size(3,3));
+        dilate(_binary,_binary,s);
+    }else if(_LastArmor.distance > 3000){
+        Mat s = getStructuringElement(MORPH_RECT,Size(5,5));
+        dilate(_binary,_binary,s);
     }
+#ifdef IMAGE_DEBUG
+//    if(_ForDebug == 1){
+//        imshow("left_binary",_binary);
+//    }else if(_ForDebug == 2){
+//        imshow("right_binary",_binary);
+//    }
 #endif
 }
 
@@ -55,10 +61,10 @@ void Ammor_find::Find_lightbar()
     {
        RotatedRect rRect =  minAreaRect(contours[i]);
        // remove the crosswide
-       if(rRect.size.area() > 50)
+       if(rRect.size.area() > _params.rect_area)
        {
-         if(((rRect.size.width > rRect.size.height) && (rRect.angle < -55)) ||
-                   ((rRect.size.width < rRect.size.height) && (rRect.angle > -35)))
+         if(((rRect.size.width > rRect.size.height) && (rRect.angle < -75)) ||
+                   ((rRect.size.width < rRect.size.height) && (rRect.angle > -25)))
          {
 #ifdef IMAGE_DEBUG
             Point2f points[4];
@@ -73,45 +79,45 @@ void Ammor_find::Find_lightbar()
          }
        }
     }
-
-    // remove the closer
+    sort(RectfirstResult.begin(),RectfirstResult.end(),RotateRectSort);
     size_t size = RectfirstResult.size();
-    if(size >= 2){
-        vector<RotatedRect> Groups;
-        int cellmaxsize;
-        Groups.push_back(RectfirstResult[0]);
-        cellmaxsize = RectfirstResult[0].size.height * RectfirstResult[0].size.width;
-        if(cellmaxsize > 2500) cellmaxsize = 0;
-        int maxsize;
+    vector<RotatedRect> Groups;
+    int cellmaxsize;
+    Groups.push_back(RectfirstResult[0]);
+    cellmaxsize = RectfirstResult[0].size.height * RectfirstResult[0].size.width;
+    if(cellmaxsize > 2500) cellmaxsize = 0;
+    int maxsize;
 
-        for(size_t i=1;i<size;i++){
-            if(RectfirstResult[i].center.x - RectfirstResult[i-1].center.x <10){
-                maxsize = RectfirstResult[i].size.height * RectfirstResult[i].size.width;
-                if(maxsize > 2500) continue;
-                if(maxsize > cellmaxsize) cellmaxsize = maxsize;
-                Groups.push_back(RectfirstResult[i]);
-            }else{
-                Armorlists.push_back(Groups);
-                CellMaxs.push_back(cellmaxsize);
-                cellmaxsize = 0;
-                maxsize = 0;
-                Groups.clear();
-                Groups.push_back(RectfirstResult[i]);
-                cellmaxsize = RectfirstResult[i].size.height * RectfirstResult[i].size.width;
-            }
+    for(int i=1;i<size;i++){
+        if(RectfirstResult[i].center.x - RectfirstResult[i-1].center.x <10){
+            maxsize = RectfirstResult[i].size.height * RectfirstResult[i].size.width;
+            if(maxsize > 2500) continue;
+            if(maxsize > cellmaxsize) cellmaxsize = maxsize;
+            Groups.push_back(RectfirstResult[i]);
+        }else{
+            Armorlists.push_back(Groups);\
+            CellMaxs.push_back(cellmaxsize);
+            cellmaxsize = 0;
+            maxsize = 0;
+            Groups.clear();
+            Groups.push_back(RectfirstResult[i]);
+            cellmaxsize = RectfirstResult[i].size.height * RectfirstResult[i].size.width;
         }
-        Armorlists.push_back(Groups);
-        CellMaxs.push_back(cellmaxsize);
-        size = Armorlists.size();
-        for(size_t i=0;i<size;i++){
-            int Gsize = Armorlists[i].size();
-            int GroupMax = CellMaxs[i];
-            if(GroupMax > 5){
-                for(int j=0;j<Gsize;j++){
-                    maxsize = Armorlists[i][j].size.height * Armorlists[i][j].size.width;
-                    if(maxsize == GroupMax){
-                        _Rect_led.push_back(Armorlists[i][j]);
-                    }
+        //std::cout<<"max:"<<cellmaxsize<<std::endl;
+        //sizescale = (float)RectfirstResult[i].size.height/(float)RectfirstResult[i].size.width;
+        //std::cout<<"scale:"<<sizescale<<" width:"<<RectfirstResult[i].size.width<<std::endl;
+    }
+    Armorlists.push_back(Groups);\
+    CellMaxs.push_back(cellmaxsize);
+    size = Armorlists.size();
+    for(int i=0;i<size;i++){
+        int Gsize = Armorlists[i].size();
+        int GroupMax = CellMaxs[i];
+        if(GroupMax > 5){
+            for(int j=0;j<Gsize;j++){
+                maxsize = Armorlists[i][j].size.height * Armorlists[i][j].size.width;
+                if(maxsize == GroupMax){
+                    _Rect_led.push_back(Armorlists[i][j]);
                 }
             }
         }
@@ -161,67 +167,195 @@ void Ammor_find::GetArmors()
                 _Rect_led[j].points(_pt);
                 sort_Rotated_Point(_pt,pt_L2);
 
-                // the dis
-                K = GetK(L1,L2);
-                ydis = abs(L1.y - L2.y);
-                xdis = abs(L1.x - L2.x);
-                areascale = areaL1 / areaL2;
-                heightmax =MAX(MAX(_Rect_led[i].size.width,_Rect_led[j].size.width),
-                               MAX(_Rect_led[i].size.height,_Rect_led[j].size.height));
-                hwdiv = xdis/heightmax;
-                if(angleL1 > 45.0 && angleL2 < 45.0){
-                    angleabs = 90.0 - angleL1 + angleL2;
-                }else if(angleL1 <= 45.0 && angleL2 >= 45.0){
-                    angleabs = 90.0 - angleL2 + angleL1;
-                }else{
-                    if(angleL1 > angleL2) angleabs = angleL1 - angleL2;
-                    else angleabs = angleL2 - angleL1;
-                }
-                maxangle = MAX(ptangle(pt_L1[0],pt_L2[2]),ptangle(pt_L1[1],pt_L2[3]));
-#ifdef SHOW_DEBUG
-            cout << "K:" << K << endl;
-            cout << "ydis:" << ydis << endl;
-            cout << "xdis:" << xdis << endl;
-            cout << "divscale:" << areascale << endl;
-            cout << "heightmax:" << heightmax << endl;
-            cout << "hwdiv:" << hwdiv << endl;
-            cout << "angleabs:" << angleabs << endl;
-            cout << "maxangle:" << maxangle << endl;
-#endif
-                if(fabs(K) < 0.5 && areascale < 3.0 && maxangle < 20.0 && hwdiv < 10.0 && ydis < 0.4*heightmax){
-                    if(angleabs < 7){
-                        Armordata pushdata;
-                        if(hwdiv > 4.0){
-                           pushdata.armor = pushdata.big_armor;
+                if(L1.x != L2.x){
+                    // the dis
+                    K = GetK(L1,L2);
+                    ydis = abs(L1.y - L2.y);
+                    xdis = abs(L1.x - L2.x);
+                    if(areaL1 > areaL2)
+                    {
+                        areascale = areaL1 / areaL2;
+                    }else{
+                        areascale = areaL2 / areaL1;
+                    }
+                    heightmax =MAX(MAX(_Rect_led[i].size.width,_Rect_led[j].size.width),
+                                   MAX(_Rect_led[i].size.height,_Rect_led[j].size.height));
+                    hwdiv = xdis/heightmax;
+
+                    if(angleL1 > 45.0 && angleL2 < 45.0){
+                        angleabs = 90.0 - angleL1 + angleL2;
+                    }else if(angleL1 <= 45.0 && angleL2 >= 45.0){
+                        angleabs = 90.0 - angleL2 + angleL1;
+                    }else{
+                        if(angleL1 > angleL2) angleabs = angleL1 - angleL2;
+                        else angleabs = angleL2 - angleL1;
+                    }
+                    maxangle = MAX(ptangle(pt_L1[0],pt_L2[2]),ptangle(pt_L1[1],pt_L2[3]));
+    #ifdef SHOW_DEBUG
+                cout << "K:" << K << endl;
+                cout << "ydis:" << ydis << endl;
+                cout << "xdis:" << xdis << endl;
+                cout << "divscale:" << areascale << endl;
+                cout << "heightmax:" << heightmax << endl;
+                cout << "hwdiv:" << hwdiv << endl;
+                cout << "angleabs:" << angleabs << endl;
+                cout << "maxangle:" << maxangle << endl;
+    #endif
+                    if(fabs(K) < 0.5 && areascale < 3.0 && maxangle < 20.0 && hwdiv < 5 && hwdiv > 1 && ydis < 0.5*heightmax){
+                        if(angleabs < 7){
+                            Armordata pushdata;
+                            if(hwdiv > 4.0){
+                               pushdata.armor = pushdata.big_armor;
+                            }
+                            else{
+                               pushdata.armor = pushdata.small_armor;
+                            }
+                            Point2f armor_center = Point2f(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y));
+                            pushdata.armor_center = armor_center;
+                            pushdata.armor_points[0] = pt_L1[0];
+                            pushdata.armor_points[1] = pt_L1[1];
+                            pushdata.armor_points[2] = pt_L2[2];
+                            pushdata.armor_points[3] = pt_L2[3];
+                            _Armordatas.push_back(pushdata);
+                            _ArmorPoints.push_back(armor_center);
+    #ifdef IMAGE_DEBUG
+                            double radius = sqrt((pow(ydis,2) + pow(xdis,2)))/2;
+                            circle(_src,Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y)),1,Scalar(100),1);
+                            circle(_src,Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y)),radius,Scalar(100),2);
+                            cout << radius << endl;
+    #endif
                         }
-                        else{
-                           pushdata.armor = pushdata.small_armor;
-                        }
-                        Point2f armor_center = Point2f(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y));
-                        pushdata.armor_center = armor_center;
-                        pushdata.armor_points[0] = pt_L1[0];
-                        pushdata.armor_points[1] = pt_L1[1];
-                        pushdata.armor_points[2] = pt_L2[2];
-                        pushdata.armor_points[3] = pt_L2[3];
-                        _Armordatas.push_back(pushdata);
-                        _ArmorPoints.push_back(armor_center);
-#ifdef IMAGE_DEBUG
-                    double radius = sqrt((pow(ydis,2) + pow(xdis,2)))/2;
-                    circle(_src,Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y)),1,Scalar(255),1);
-                    circle(_src,Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y)),radius,Scalar(255),2);
-#endif
                     }
                 }
             }
         }
     }
-    if(_ArmorPoints.size() != 0 ){
-        _ArmorLostDelay = 0;
+    if(_ArmorPoints.size() != 0){
+       _ArmorLostDelay = 0;
     }
     else{
-        _ArmorLostDelay += 0.5;
-        if(_ArmorLostDelay > 5)
+        if(_ArmorLostDelay >= 0)
         {
+            _ArmorLostDelay++;
+            if(_ArmorLostDelay > 3){
+            _ArmorLostDelay = -1;
+            }
+        }
+        else{
+            _ArmorLostDelay = -1;
+        }
+    }
+}
+void Ammor_find::GetArmor_img_cut(){
+    if(_Rect_led.size() >= 2)
+    {
+        sort(_Rect_led.begin(),_Rect_led.end(),RotateRectSort);
+        Point2f L1,L2;
+        float K=0.0,angleabs = 0.0,angleL1=0.0,angleL2=0.0; // angle data
+        float areascale=0.0,areaL1=0.0,areaL2=0.0; // area data
+        float ydis = 0.0;
+        float maxangle=0.0,xdis=0.0,heightmax=0.0,hwdiv=0.0;// x or y dis
+        Point2f _pt[4],pt_L1[4],pt_L2[4];
+        auto ptangle = [](const Point2f &p1,const Point2f &p2){
+            return fabs(atan2(p2.y-p1.y,p2.x-p1.x)*180.0/CV_PI);
+        };
+
+        size_t size = _Rect_led.size();
+        for(size_t i=0;i<size-1;i++)
+        {
+            for(size_t j=1;j<size;j++)
+            {
+                // left params
+                angleL1 = fabs(_Rect_led[i].angle);
+                L1 = _Rect_led[i].center;
+                areaL1 = _Rect_led[i].size.height * _Rect_led[i].size.width;
+                _Rect_led[i].points(_pt);
+                sort_Rotated_Point(_pt,pt_L1);
+                /*pt
+                 * 0 2
+                 * 1 3
+                 * */
+
+                // right params
+                L2 = _Rect_led[j].center;
+                areaL2 = _Rect_led[j].size.width * _Rect_led[j].size.height;
+                angleL2 = fabs(_Rect_led[j].angle);
+                _Rect_led[j].points(_pt);
+                sort_Rotated_Point(_pt,pt_L2);
+
+                // the dis
+                if(L1.x != L2.x){
+                    K = GetK(L1,L2);
+                    ydis = abs(L1.y - L2.y);
+                    xdis = abs(L1.x - L2.x);
+                    if(areaL1 > areaL2)
+                    {
+                        areascale = areaL1 / areaL2;
+                    }else{
+                        areascale = areaL2 / areaL1;
+                    }
+                    heightmax =MAX(MAX(_Rect_led[i].size.width,_Rect_led[j].size.width),
+                                   MAX(_Rect_led[i].size.height,_Rect_led[j].size.height));
+                    hwdiv = xdis/heightmax;
+                    if(angleL1 > 45.0 && angleL2 < 45.0){
+                        angleabs = 90.0 - angleL1 + angleL2;
+                    }else if(angleL1 <= 45.0 && angleL2 >= 45.0){
+                        angleabs = 90.0 - angleL2 + angleL1;
+                    }else{
+                        if(angleL1 > angleL2) angleabs = angleL1 - angleL2;
+                        else angleabs = angleL2 - angleL1;
+                    }
+                    maxangle = MAX(ptangle(pt_L1[0],pt_L2[2]),ptangle(pt_L1[1],pt_L2[3]));
+    #ifdef SHOW_DEBUG
+                cout << "K:" << K << endl;
+                cout << "ydis:" << ydis << endl;
+                cout << "xdis:" << xdis << endl;
+                cout << "divscale:" << areascale << endl;
+                cout << "heightmax:" << heightmax << endl;
+                cout << "hwdiv:" << hwdiv << endl;
+                cout << "angleabs:" << angleabs << endl;
+                cout << "maxangle:" << maxangle << endl;
+    #endif
+                    if(fabs(K) < 1 && areascale < 3.0 && maxangle < 25.0 && hwdiv < 3.0 && ydis < heightmax){
+                        if(angleabs < 15){
+                            Armordata pushdata;
+                            if(hwdiv > 4.0){
+                               pushdata.armor = pushdata.big_armor;
+                            }
+                            else{
+                               pushdata.armor = pushdata.small_armor;
+                            }
+                            Point2f armor_center = Point2f(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y));
+                            pushdata.armor_center = armor_center;
+                            pushdata.armor_points[0] = pt_L1[0];
+                            pushdata.armor_points[1] = pt_L1[1];
+                            pushdata.armor_points[2] = pt_L2[2];
+                            pushdata.armor_points[3] = pt_L2[3];
+                            _Armordatas.push_back(pushdata);
+                            _ArmorPoints.push_back(armor_center);
+    #ifdef IMAGE_DEBUG
+                        double radius = sqrt((pow(ydis,2) + pow(xdis,2)))/2;
+                        circle(_src,Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y)),1,Scalar(255),1);
+                        circle(_src,Point(0.5*(L1.x+L2.x),0.5*(L1.y+L2.y)),radius,Scalar(255),2);
+    #endif
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if(_ArmorPoints.size() != 0){
+       _ArmorLostDelay = 0;
+    }
+    else{
+        if(_ArmorLostDelay >= 0)
+        {
+            _ArmorLostDelay++;
+            if(_ArmorLostDelay > 5){
+            _ArmorLostDelay = -1;
+            }
+        }
+        else{
             _ArmorLostDelay = -1;
         }
     }
@@ -277,15 +411,17 @@ void Ammor_find::img_cut()
 {
     if(_ArmorLostDelay >= 0){
         Point lu = _LastArmor.armor_points[0];
+        Point ld = _LastArmor.armor_points[1];
+        Point ru = _LastArmor.armor_points[2];
         Point rd = _LastArmor.armor_points[3];
 
         int width = (rd.x - lu.x) > 0 ? (rd.x - lu.x) : 0;
-        int height = (rd.y - lu.y) > 0 ? (rd.y - lu.y) : 0;
+        int height = MAX((rd.y - lu.y),(ld.y - ru.y)) > 0 ? MAX((rd.y - lu.y),(ld.y - ru.y)) : 0;
 
-        int top = (lu.y - height*(2 + _ArmorLostDelay))  > 0 ? (lu.y - height*(2 + _ArmorLostDelay)) : 1;
-        int down = (rd.y + height*(2 + _ArmorLostDelay)) < 720 ? (rd.y + height*(2 + _ArmorLostDelay)) : 719;
-        int left = (lu.x - width*(0.8 + _ArmorLostDelay)) > 0 ? (lu.x - width*(0.8 + _ArmorLostDelay)) : 1;
-        int right = (rd.x + width *(0.8 + _ArmorLostDelay)) < 1280 ? (rd.x + width *(0.8 + _ArmorLostDelay)) : 1279;
+        int top = (lu.y - height*(2.5 + 0.1*_ArmorLostDelay))  > 0 ? (lu.y - height*(2.5 + 0.1*_ArmorLostDelay)) : 1;
+        int down = (rd.y + height*(2.5 + 0.1*_ArmorLostDelay)) < 720 ? (rd.y + height*(2.5 + 0.1*_ArmorLostDelay)) : 719;
+        int left = (lu.x - width*(0.8+ 0.1*_ArmorLostDelay)) > 0 ? (lu.x - width*(0.8 + 0.1*_ArmorLostDelay)) : 1;
+        int right = (rd.x + width *(0.8 + 0.1*_ArmorLostDelay)) < 1280 ? (rd.x + width *(0.8 + 0.1*_ArmorLostDelay)) : 1279;
 
         if (top < down && left < right){
             _src = _src(Range(top,down),Range(left,right));
@@ -315,7 +451,12 @@ void Ammor_find::detect(const Mat &image,const bool mode,const uchar Fordebug)
     img_cut();
     Color_process(_src);
     Find_lightbar();
-    GetArmors();
+    if(_ArmorLostDelay != 0 ){
+        GetArmors();
+    }
+    else{
+        GetArmor_img_cut();
+    }
 #ifdef IMAGE_DEBUG
     if(_ForDebug == 1){
         imshow("left_src",_src);
@@ -333,10 +474,10 @@ void Ammor_find::detect(const Mat &image,const bool mode,const uchar Fordebug)
   */
 void Ammor_find::clear()
 {
-    RectfirstResult.clear();
-    CellMaxs.clear();
-    Armorlists.clear();
     _Rect_led.clear();
     _Armordatas.clear();
     _ArmorPoints.clear();
+    RectfirstResult.clear();
+    Armorlists.clear();
+    CellMaxs.clear();
 }

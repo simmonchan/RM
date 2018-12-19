@@ -1,8 +1,6 @@
 #ifndef HEADER_H
 #define HEADER_H
 
-#include <QTime>
-#include <QDebug>
 #include <opencv2/core/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -11,10 +9,6 @@
 #include <opencv2/dnn/dnn.hpp>
 #include <iostream>
 #include <thread>
-
-//#define SHOW_DEBUG
-//#define IMAGE_DEBUG
-#define PORT_SEND
 
 #define BLUE_DETECT true
 #define RED_DETECT false
@@ -35,32 +29,14 @@ struct InitParams{
     uchar armor_thres_whole;
     uchar armor_thres_red;
     uchar armor_thres_blue;
-    uchar rect_area;
-    uchar dilate_num;
-    uchar K;
-    uchar areascale;
-    uchar maxangle;
-    uchar hwdiv;
-    uchar ydis;
-    uchar angleabs;
-
 
     InitParams(){
-        armor_thres_whole = 50;
+        armor_thres_whole = 30;
         armor_thres_red = 40;
-        armor_thres_blue = 70;
-        rect_area = 50;
-        hwdiv = 5;
+        armor_thres_blue = 80;
     }
 
 };
-
-typedef struct{
-    float x;
-    float y;
-    float z;
-    int index;
-}AbsPosition;
 
 typedef struct{
     typedef enum{
@@ -69,7 +45,7 @@ typedef struct{
     }armor_type;
     Point armor_center = Point(0,0);
     float distance = 0.0;//mm
-    Point2f armor_points[4] = {Point(0,0),Point(0,0),Point(0,0),Point(0,0)};
+    Point armor_points[4] = {Point(0,0),Point(0,0),Point(0,0),Point(0,0)};
     armor_type armor = small_armor;
 }Armordata;
 

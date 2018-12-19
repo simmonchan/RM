@@ -65,7 +65,7 @@ void AngleSolver::solvePnP4Points(cv::Mat & trans)
   * @param Result get the offset Pos
   * @return none
   */
-void AngleSolver::get_location(vector<Armordata> &Armor,vector<AbsPosition> Result)
+void AngleSolver::get_location(vector<Armordata> &Armor,vector<AbsPosition> &Result)
 {
     size_t size = Armor.size();
     for(size_t i=0;i<size;i++){

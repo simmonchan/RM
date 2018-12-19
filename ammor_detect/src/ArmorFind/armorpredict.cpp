@@ -11,7 +11,7 @@ void ArmorPredict::Fresh()
     pitch_out = 0;
 }
 
-void ArmorPredict::Predict(vector<AbsPosition> Positions){
+void ArmorPredict::Predict(vector<AbsPosition> &Positions){
     Fresh();
     if(Positions.size() != 0){
         if(Positions.size() != 1){
@@ -19,7 +19,14 @@ void ArmorPredict::Predict(vector<AbsPosition> Positions){
         }
 
         if(Positions.size() > 1){
+            if(fabs(Positions[0].z - Positions[1].z) < 100 && OldResult.z !=0){
+                float q0 = fabs(OldResult.x - Positions[0].x);
+                float q1 = fabs(OldResult.x - Positions[1].x);
+                Result = q0 < q1 ? Positions[0] : Positions[1];
+            }
+            else{
                 Result = Positions[0];
+            }
         }else{
             Result = Positions[0];
         }
@@ -30,8 +37,10 @@ void ArmorPredict::Predict(vector<AbsPosition> Positions){
         }else{
             AngleFit(Result);
         }
-        Vision = {pitch_out,yaw_out,Result.z,0,1};
-        OldPositions = Positions;
+        cout << "z" << Result.z  << "x" << Result.x << "y:" << Result.y << endl;
+        cout << "pitch:" << pitch_out << "yaw_out:" << yaw_out << endl;
+        cout << endl << endl << endl << endl;
+        Vision = {yaw_out,pitch_out,Result.z,0,1};
         OldResult = Result;
     }
 }
@@ -54,5 +63,5 @@ void ArmorPredict::AngleFit(const AbsPosition input){
         gravity_offset = 0.04905;
     }
     yaw_out = atan(input.x/input.z) * 180/3.14159265;
-    pitch_out = atan((input.y-gravity_offset)/input.z) * 180/3.14159265;
+    pitch_out = atan((input.y - gravity_offset)/input.z) * 180/3.14159265;
 }

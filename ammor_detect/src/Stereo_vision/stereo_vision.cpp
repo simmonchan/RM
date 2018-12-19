@@ -2,7 +2,7 @@
 
 stereo_vision::stereo_vision()
 {
-    FileStorage stereo_yaml("/home/chan/Work/build-ammor_detect/camera_calibrate.yaml",FileStorage::READ);
+    FileStorage stereo_yaml("/home/s305/build-ammor_detect-Desktop-Debug/camera_calibrate.yaml",FileStorage::READ);
     stereo_yaml["cameraMatrixL"] >> cameraMatrixL;
     stereo_yaml["cameraMatrixR"] >> cameraMatrixR;
     stereo_yaml["distCoeffL"] >> distCoeffL;
@@ -57,7 +57,7 @@ void stereo_vision::get_location(const vector<Point2f> &Left_Points, const vecto
 
             AbsPosition Pos;
             double disp_x = left_distort_points[i].x - Right_distort_points[i].x;
-            Mat image_xyd = (Mat_<double>(4,1) << Left_Points[i].x,Left_Points[i].y,disp_x,1);
+            Mat image_xyd = (Mat_<double>(4,1) << left_distort_points[i].x,Right_distort_points[i].y,disp_x,1);
             Mat xyzw = (Mat_<double>(4,1) << 0,0,0,0);
             xyzw = Q*image_xyd;
             Pos.z = xyzw.at<double>(2,0)/xyzw.at<double>(3,0);

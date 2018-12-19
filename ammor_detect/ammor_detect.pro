@@ -18,14 +18,14 @@ INCLUDEPATH += /usr/local/include \
                 /usr/local/include/opencv \
                 /usr/local/include/opencv2
 
-LIBS += /usr/local/lib/libopencv_highgui.so.3.3 \
-        /usr/local/lib/libopencv_core.so.3.3    \
-        /usr/local/lib/libopencv_imgproc.so.3.3 \
-        /usr/local/lib/libopencv_imgcodecs.so.3.3\
-        /usr/local/lib/libopencv_videoio.so.3.3\
-        /usr/local/lib/libopencv_calib3d.so.3.3\
+LIBS += /usr/local/lib/libopencv_highgui.so.3.2 \
+        /usr/local/lib/libopencv_core.so.3.2    \
+        /usr/local/lib/libopencv_imgproc.so.3.2 \
+        /usr/local/lib/libopencv_imgcodecs.so.3.2\
+        /usr/local/lib/libopencv_videoio.so.3.2\
+        /usr/local/lib/libopencv_calib3d.so.3.2\
         /usr/local/lib/libopencv_ml.so\
-        /usr/local/lib/libopencv_dnn.so.3.3
+        /usr/local/lib/libopencv_dnn.so
 
 SOURCES += main.cpp \
     src/ArmorFind/ammor_find.cpp\
